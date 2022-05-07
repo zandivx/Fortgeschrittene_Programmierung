@@ -1,6 +1,6 @@
 CC            := gcc
-CCFLAGS       := -Wall -Wextra -pedantic -std=c17 -g -c
-LDFLAGS       := -lm
+CCFLAGS       := -Wall -Wextra -pedantic -std=c17 -g -c  # -g: debugging -c: compile only, no linking
+LDFLAGS       := -lm  # linker flag
 OUTPUT        := a.out
 
 BUILDDIR      := build
@@ -10,7 +10,7 @@ OBJECTS       := $(patsubst %,$(BUILDDIR)/%,${SOURCES:.c=.o})
 .PHONY: clean
 
 $(OUTPUT): $(OBJECTS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(BUILDDIR)

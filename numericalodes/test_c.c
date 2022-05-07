@@ -1,31 +1,30 @@
 #include "RungeKutta4.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#define PI 3.14159265358979323846
 
 double f(double t, double y);
 
 int main()
 {
-    double size, **array;
+    size_t size;
+    double *t, *y;
+    FILE *file = fopen("array.csv", "w");
 
-    array = RK4single(f, 0, 4 * M_PI, 1, 0.01);
-    size = **(array + 2);
+    size = RK4single(&t, &y, f, 0, 4 * PI, -1, 1);
 
-    printf("t: ");
-    for (int n = 0; n < size; n++)
+    fprintf(file, "t,y\n");
+    for (size_t n = 0; n < size; n++)
     {
-        printf("%f", *((*array) + n));
+        fprintf(file, "%f,%f\n", t[n], y[n]);
     }
 
-    printf("y: ");
-    for (int n = 0; n < size; n++)
-    {
-        printf("%f", *(*(array + 1) + n));
-    }
+    fclose(file);
+
+    free(t);
+    free(y);
 
     return 0;
 }
