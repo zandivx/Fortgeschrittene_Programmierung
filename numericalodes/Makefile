@@ -10,14 +10,14 @@ OBJECTS       := $(patsubst %,$(BUILDDIR)/%,${SOURCES:.c=.o})
 .PHONY: clean
 
 $(OUTPUT): $(OBJECTS)
-    $(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 $(BUILDDIR)/%.o: %.c
-    @mkdir -p $(BUILDDIR)
-    $(CC) $(CCFLAGS) -o $@ -MMD -MF ./$@.d $<
+	@mkdir -p $(BUILDDIR)
+	$(CC) $(CCFLAGS) -o $@ -MMD -MF ./$@.d $<
 
 clean:
-    rm -rf $(BUILDDIR)
-    rm -f $(OUTPUT)
+	rm -rf $(BUILDDIR)
+	rm -f $(OUTPUT)
 
 -include $(wildcard *.d)
