@@ -4,4 +4,4 @@ Student: Andreas Zach
 Betreuer: Prof. Enrico Arrigoni
 
 # Ziel
-Implementierung von numerischen Methoden zur Lösung von Differentialgleichungen in C mittels Python-Api als extension für Python.
+Implementierung von numerischen Methoden zur Lösung von Differentialgleichungen in C mittels Python-Api als extension module für Python.

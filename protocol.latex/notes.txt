@@ -1,0 +1,2 @@
+RK4 in C (Formeln von Wikipedia) für eine alleinstehende DGL war leicht zu implementieren
+Problem bei Vektorisierung: would need syntax like in python: func(*array) (tuple unpacking)
