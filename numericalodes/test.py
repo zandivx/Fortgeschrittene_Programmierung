@@ -1,14 +1,20 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
 
-df = pd.read_csv("array.csv")
+df = pd.read_csv("output/game3.csv")
+t = np.arange(0, 4*np.pi, 0.01)
 
-t = np.linspace(0, 12, 1000)
+def system(t, y):
+    phi, omega = y
+    return np.array([omega, -np.sin(phi)])
 
-y2 = -np.cos(t)
 
-plt.plot(df["t"], df["y"], label="numerically")
-plt.plot(t, y2, "--", label="exact")
+sol = solve_ivp(system, (0, 4*np.pi), [np.pi/8, 0], rtol=1e-10)
+plt.plot(sol.t, sol.y[0], "--", label=f"solve_ivp")
+
+
+plt.plot(t, df["y0"], label="self")
 plt.legend()
-plt.savefig("array.pdf")
+plt.savefig("output/array2.pdf")

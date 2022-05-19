@@ -1,4 +1,5 @@
 #include "RungeKutta4.h"
+#include "matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -14,12 +15,13 @@ double omega_dot(double t, double *y);
 int game1();
 int game2();
 int game3();
+int testmatrix();
 
 //---------------------------------------------------
-double **Y;
+double *Y;
 int main()
 {
-    game3();
+    return game3();
 }
 //---------------------------------------------------
 
@@ -69,10 +71,9 @@ int game2()
 
 int game3()
 {
-    size_t size;
+    size_t size = 0;
     const size_t n = 2;
     double *t, (*funcs[n])(double, double *), y0[n];
-    FILE *file = fopen("output/game3.csv", "w");
 
     funcs[0] = phi_dot;
     funcs[1] = omega_dot;
@@ -80,26 +81,24 @@ int game3()
     y0[1] = 0;
 
     size = RK4vector(&t, &Y, funcs, n, 0, 4 * PI, y0, 0.01);
+    matrix m = {&Y, size, n};
 
-    fprintf(file, "t,");
-    for (size_t j = 0; j < size; j++)
-    {
-        fprintf(file, "y%ld,", j);
-    }
-    for (size_t i = 0; i < n; i++)
-    {
-        fprintf(file, "%f,", t[i]);
-        for (size_t j = 0; j < size; j++)
-        {
-            fprintf(file, "%f,", Y[i][j]);
-        }
-        fprintf(file, "\n");
-    }
-
-    fclose(file);
+    // print_m(m);
+    fprint_m(m, "output/game3.csv");
+    printf("size: %ld\n", size);
 
     free(t);
     free(Y);
+
+    return 0;
+}
+
+int testmatrix()
+{
+    double **y = NULL;
+    matrix m = {y, 5, 8};
+    create_m(m);
+    print_m(m);
 
     return 0;
 }

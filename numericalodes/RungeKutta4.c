@@ -1,6 +1,7 @@
 #include "RungeKutta4.h"
 #include "broadcast.h"
 #include "matrix.h"
+#include <stdio.h>  // printf
 #include <stdlib.h> // malloc, free
 #include <stddef.h> // size_t
 #include <stdarg.h> // va_list
@@ -40,7 +41,7 @@ size_t RK4single(double **t, double **y, double (*func)(double, double), double 
     return size;
 }
 
-size_t RK4vector(double **t, double ***y, double (**func)(double, double *), size_t n, double t0, double tmax, double *y0, double h)
+size_t RK4vector(double **t, double **y, double (**func)(double, double *), size_t n, double t0, double tmax, double *y0, double h)
 {
     /*
     t: pointer to array
@@ -49,8 +50,8 @@ size_t RK4vector(double **t, double ***y, double (**func)(double, double *), siz
 
     // declare variables
     const size_t size = ceil((tmax - t0) / h);
-    vectorptr k1, k2, k3, k4, y_temp, v = *t;
-    matrix m = {*y, size, n};
+    double *k1, *k2, *k3, *k4, *y_temp, *v = *t;
+    matrix m = {y, size, n};
 
     // create size x n matrix
     create_m(m);
@@ -69,10 +70,8 @@ size_t RK4vector(double **t, double ***y, double (**func)(double, double *), siz
     v[0] = t0;
     v[size - 1] = tmax;
 
-    print_m(m);
-
     // partially initialize matrix
-    memcpy(m.ptr[0], y0, n * sizeof(double));
+    memcpy(*m.pptr, y0, n * sizeof(double));
 
     // axis 0
     for (size_t i = 1; i < size; i++)
@@ -81,17 +80,17 @@ size_t RK4vector(double **t, double ***y, double (**func)(double, double *), siz
         for (size_t j = 0; j < n; j++)
         {
             // calculate k's
-            k1[j] = func[j](v[i - 1], m.ptr[i - 1]);
-            broadcast_add(y_temp, m.ptr[i - 1], n, h * k1[j]);
+            k1[j] = func[j](v[i - 1], get_r(m, i - 1));
+            broadcast_add(y_temp, get_r(m, i - 1), n, h * k1[j]);
             k2[j] = func[j](v[i - 1] + h / 2, y_temp);
-            broadcast_add(y_temp, m.ptr[i - 1], n, h * k2[j]);
+            broadcast_add(y_temp, get_r(m, i - 1), n, h * k2[j]);
             k3[j] = func[j](v[i - 1] + h / 2, y_temp);
-            broadcast_add(y_temp, m.ptr[i - 1], n, h * k3[j]);
+            broadcast_add(y_temp, get_r(m, i - 1), n, h * k3[j]);
             k4[j] = func[j](v[i - 1] + h, y_temp);
 
             // calculate next t and y
             v[i] = v[i - 1] + h;
-            m.ptr[i][j] = m.ptr[i - 1][j] + h / 6 * (k1[j] + 2 * (k2[j] + k3[j]) + k4[j]);
+            set(m, i, j, get_e(m, i - 1, j) + h / 6 * (k1[j] + 2 * (k2[j] + k3[j]) + k4[j]));
         }
     }
 
@@ -100,7 +99,6 @@ size_t RK4vector(double **t, double ***y, double (**func)(double, double *), siz
     free(k3);
     free(k4);
     free(y_temp);
-    transpose_m(m);
 
     return size;
 }

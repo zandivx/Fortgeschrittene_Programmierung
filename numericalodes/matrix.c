@@ -1,35 +1,46 @@
 #include "matrix.h"
-#include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 // https://www.geeksforgeeks.org/dynamically-allocate-2d-array-c/
+// https://codereview.stackexchange.com/questions/159301/matrices-in-c-implementation
+
 void create_m(matrix m)
 {
-    m.ptr = malloc(m.r * sizeof(double *));
-    m.ptr[0] = malloc(m.r * m.c * sizeof(double));
-
-    for (size_t i = 0; i < m.c; i++)
-    {
-        m.ptr[i] = m.ptr[0] + m.c * i;
-    }
+    *m.pptr = malloc(m.r * m.c * sizeof(double));
 }
 
 void delete_m(matrix m)
 {
-    free(m.ptr);
+    free(*m.pptr);
 }
 
-// double get_m(matrix m, size_t i, size_t j)
-// {
-//     return *(m.ptr + i * m.r + j * m.c);
-// }
+double get_e(matrix m, size_t i, size_t j)
+{
+    return *(*m.pptr + i * m.c + j);
+}
 
-// int set_m(matrix m, size_t i, size_t j, double value)
-// {
-//     m.ptr[i * m.r + j * m.c] = value;
-//     return 0;
-// }
+double *get_r(matrix m, size_t i)
+{
+    return *m.pptr + i * m.c;
+}
+
+void set(matrix m, size_t i, size_t j, double value)
+{
+    *(*m.pptr + i * m.c + j) = value;
+}
+
+void transpose(matrix m)
+{
+    for (size_t i = 0; i < m.r; i++)
+    {
+        for (size_t j = 0; j < m.c; j++)
+        {
+            set(m, i, j, get_e(m, j, i));
+        }
+    }
+}
 
 void print_m(matrix m)
 {
@@ -37,20 +48,30 @@ void print_m(matrix m)
     {
         for (size_t j = 0; j < m.c; j++)
         {
-            printf("%f\t", m.ptr[i][j]);
+            printf("%e\t", get_e(m, i, j));
         }
         printf("\n");
     }
 }
 
-void transpose_m(matrix m)
+void fprint_m(matrix m, char *path)
 {
-    size_t i, j;
-    for (i = 0; i < m.r; i++)
+    FILE *file = fopen(path, "w");
+
+    for (size_t j = 0; j < m.c; j++)
     {
-        for (j = 0; j < m.c; j++)
-        {
-            m.ptr[i][j] = m.ptr[j][i];
-        }
+        fprintf(file, "y%ld,", j);
     }
+    fprintf(file, "\n");
+
+    for (size_t i = 0; i < m.r; i++)
+    {
+        for (size_t j = 0; j < m.c; j++)
+        {
+            fprintf(file, "%e,", get_e(m, i, j));
+        }
+        fprintf(file, "\n");
+    }
+    fclose(file);
+    printf("Wrote to path: %s\n", path);
 }
