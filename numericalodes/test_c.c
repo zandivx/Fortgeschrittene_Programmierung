@@ -1,5 +1,6 @@
 #include "RungeKutta4.h"
 #include "matrix.h"
+#include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -9,19 +10,22 @@
 
 double f1(double t, double y);
 double f2(double t, double y);
+double f2tilde(double t, double *y);
 double phi_dot(double t, double *y);
 double omega_dot(double t, double *y);
 
 int game1();
 int game2();
 int game3();
+int game4();
 int testmatrix();
+int testvector();
 
 //---------------------------------------------------
-double *Y;
+double *Y = NULL;
 int main()
 {
-    return game3();
+    return testvector();
 }
 //---------------------------------------------------
 
@@ -77,10 +81,32 @@ int game3()
 
     funcs[0] = phi_dot;
     funcs[1] = omega_dot;
-    y0[0] = PI / 8;
+    y0[0] = PI * 0.9;
     y0[1] = 0;
 
-    size = RK4vector(&t, &Y, funcs, n, 0, 4 * PI, y0, 0.01);
+    size = RK4vector(&t, &Y, funcs, n, 0, 16 * PI, y0, 1e-4);
+    matrix m = {&Y, size, n};
+
+    // print_m(m);
+    fprint_m(m, "output/game3.csv");
+    printf("size: %ld\n", size);
+
+    free(t);
+    free(Y);
+
+    return 0;
+}
+
+int game4()
+{
+    size_t size = 0;
+    const size_t n = 1;
+    double *t, (*funcs[n])(double, double *), y0[n];
+
+    funcs[0] = f2tilde;
+    y0[0] = 1;
+
+    size = RK4vector(&t, &Y, funcs, n, 0, 10, y0, 1e-4);
     matrix m = {&Y, size, n};
 
     // print_m(m);
@@ -103,6 +129,23 @@ int testmatrix()
     return 0;
 }
 
+int testvector()
+{
+    vector v;
+    v.n = 6;
+    printf("%ld\n", v.n);
+
+    printf("%p\n", v.ptr);
+
+    create_v(v);
+    printf("%p\n", v.ptr);
+
+    v.ptr = malloc(v.n * sizeof(double));
+    printf("%p\n", v.ptr);
+
+    return 0;
+}
+
 double f1(double t, double y)
 {
     UNUSED(y);
@@ -113,6 +156,12 @@ double f2(double t, double y)
 {
     UNUSED(t);
     return y;
+}
+
+double f2tilde(double t, double *y)
+{
+    UNUSED(t);
+    return y[0];
 }
 
 double phi_dot(double t, double *y)

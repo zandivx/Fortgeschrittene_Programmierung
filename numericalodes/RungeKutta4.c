@@ -1,10 +1,9 @@
 #include "RungeKutta4.h"
-#include "broadcast.h"
+#include "vector.h"
 #include "matrix.h"
 #include <stdio.h>  // printf
 #include <stdlib.h> // malloc, free
 #include <stddef.h> // size_t
-#include <stdarg.h> // va_list
 #include <string.h> // memcpy
 #include <math.h>   // ceil
 
@@ -50,25 +49,29 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
 
     // declare variables
     const size_t size = ceil((tmax - t0) / h);
-    double *k1, *k2, *k3, *k4, *y_temp, *v = *t;
+    vector k1 = {NULL, n};
+    vector k2 = {NULL, n};
+    vector k3 = {NULL, n};
+    vector k4 = {NULL, n};
+    vector tmp = {NULL, n};
     matrix m = {y, size, n};
 
     // create size x n matrix
     create_m(m);
 
-    // size-dim vector
-    v = malloc(size * sizeof(double));
+    // create size-dim vector
+    *t = (double *)malloc(size * sizeof(double));
 
-    // n-dim vectors
-    k1 = malloc(n * sizeof(double));
-    k2 = malloc(n * sizeof(double));
-    k3 = malloc(n * sizeof(double));
-    k4 = malloc(n * sizeof(double));
-    y_temp = malloc(n * sizeof(double));
+    // create n-dim vectors
+    create_v(k1);
+    create_v(k2);
+    create_v(k3);
+    create_v(k4);
+    create_v(tmp);
 
     // partially initialize t vector
-    v[0] = t0;
-    v[size - 1] = tmax;
+    (*t)[0] = t0;
+    (*t)[size - 1] = tmax;
 
     // partially initialize matrix
     memcpy(*m.pptr, y0, n * sizeof(double));
@@ -76,29 +79,49 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
     // axis 0
     for (size_t i = 1; i < size; i++)
     {
-        // axis 1
+        // axis 1 loops
+        vector row = {get_r(m, i - 1), n};
+
+        // k1
         for (size_t j = 0; j < n; j++)
         {
-            // calculate k's
-            k1[j] = func[j](v[i - 1], get_r(m, i - 1));
-            broadcast_add(y_temp, get_r(m, i - 1), n, h * k1[j]);
-            k2[j] = func[j](v[i - 1] + h / 2, y_temp);
-            broadcast_add(y_temp, get_r(m, i - 1), n, h * k2[j]);
-            k3[j] = func[j](v[i - 1] + h / 2, y_temp);
-            broadcast_add(y_temp, get_r(m, i - 1), n, h * k3[j]);
-            k4[j] = func[j](v[i - 1] + h, y_temp);
+            k1.ptr[j] = func[j]((*t)[i - 1], get_r(m, i - 1));
+        }
 
-            // calculate next t and y
-            v[i] = v[i - 1] + h;
-            set(m, i, j, get_e(m, i - 1, j) + h / 6 * (k1[j] + 2 * (k2[j] + k3[j]) + k4[j]));
+        // k2
+        v_add_v_factor_tmp(tmp, row, k1, h / 2);
+        for (size_t j = 0; j < n; j++)
+        {
+            k2.ptr[j] = func[j]((*t)[i - 1] + h / 2, tmp.ptr);
+        }
+
+        // k3
+        v_add_v_factor_tmp(tmp, row, k2, h / 2);
+        for (size_t j = 0; j < n; j++)
+        {
+            k3.ptr[j] = func[j]((*t)[i - 1] + h / 2, tmp.ptr);
+        }
+
+        // k4
+        v_add_v_factor_tmp(tmp, row, k3, h);
+        for (size_t j = 0; j < n; j++)
+        {
+            k3.ptr[j] = func[j]((*t)[i - 1] + h, tmp.ptr);
+        }
+
+        // calculate next t and y
+        for (size_t j = 0; j < n; j++)
+        {
+            (*t)[i] = (*t)[i - 1] + h;
+            set(m, i, j, get_e(m, i - 1, j) + h / 6 * (k1.ptr[j] + 2 * (k2.ptr[j] + k3.ptr[j]) + k4.ptr[j]));
         }
     }
 
-    free(k1);
-    free(k2);
-    free(k3);
-    free(k4);
-    free(y_temp);
+    delete_v(k1);
+    delete_v(k2);
+    delete_v(k3);
+    delete_v(k4);
+    delete_v(tmp);
 
     return size;
 }
