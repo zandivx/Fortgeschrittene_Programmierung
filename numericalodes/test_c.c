@@ -21,13 +21,13 @@ int game4();
 int testmatrix();
 int testvector();
 
-//---------------------------------------------------
+//----------------------------------------------------------------------------------------------
 double *Y = NULL;
 int main()
 {
-    return testvector();
+    return game3();
 }
-//---------------------------------------------------
+//----------------------------------------------------------------------------------------------
 
 int game1()
 {
@@ -85,7 +85,7 @@ int game3()
     y0[1] = 0;
 
     size = RK4vector(&t, &Y, funcs, n, 0, 16 * PI, y0, 1e-4);
-    matrix m = {&Y, size, n};
+    matrix m = {Y, size, n};
 
     // print_m(m);
     fprint_m(m, "output/game3.csv");
@@ -107,7 +107,7 @@ int game4()
     y0[0] = 1;
 
     size = RK4vector(&t, &Y, funcs, n, 0, 10, y0, 1e-4);
-    matrix m = {&Y, size, n};
+    matrix m = {Y, size, n};
 
     // print_m(m);
     fprint_m(m, "output/game3.csv");
@@ -121,9 +121,8 @@ int game4()
 
 int testmatrix()
 {
-    double **y = NULL;
-    matrix m = {y, 5, 8};
-    create_m(m);
+    matrix m = {NULL, 5, 8};
+    create_m(&m);
     print_m(m);
 
     return 0;
@@ -131,17 +130,9 @@ int testmatrix()
 
 int testvector()
 {
-    vector v;
-    v.n = 6;
-    printf("%ld\n", v.n);
-
-    printf("%p\n", v.ptr);
-
-    create_v(v);
-    printf("%p\n", v.ptr);
-
-    v.ptr = malloc(v.n * sizeof(double));
-    printf("%p\n", v.ptr);
+    vector v = {.n = 6};
+    create_v(&v);
+    print_v(v);
 
     return 0;
 }

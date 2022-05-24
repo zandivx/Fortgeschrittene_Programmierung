@@ -7,6 +7,8 @@
 #include <string.h> // memcpy
 #include <math.h>   // ceil
 
+#define UNUSED(x) (void)(x)
+
 // source: https://en.wikipedia.org/wiki/Runge–Kutta_methods
 
 size_t RK4single(double **t, double **y, double (*func)(double, double), double t0, double tmax, double y0, double h)
@@ -54,74 +56,85 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
     vector k3 = {NULL, n};
     vector k4 = {NULL, n};
     vector tmp = {NULL, n};
-    matrix m = {y, size, n};
+    vector row = {NULL, n};
+    vector t_ = {NULL, size};
+    matrix m = {NULL, size, n};
 
     // create size x n matrix
-    create_m(m);
+    create_m(&m);
 
     // create size-dim vector
-    *t = (double *)malloc(size * sizeof(double));
+    create_v(&t_);
 
     // create n-dim vectors
-    create_v(k1);
-    create_v(k2);
-    create_v(k3);
-    create_v(k4);
-    create_v(tmp);
+    create_v(&k1);
+    create_v(&k2);
+    create_v(&k3);
+    create_v(&k4);
+    create_v(&tmp);
 
     // partially initialize t vector
-    (*t)[0] = t0;
-    (*t)[size - 1] = tmax;
+    t_.ptr[0] = t0;
+    t_.ptr[size - 1] = tmax;
 
     // partially initialize matrix
-    memcpy(*m.pptr, y0, n * sizeof(double));
+    memcpy((void *)m.ptr, (void *)y0, n * sizeof(double));
 
     // axis 0
     for (size_t i = 1; i < size; i++)
     {
         // axis 1 loops
-        vector row = {get_r(m, i - 1), n};
+        row.ptr = get_r(m, i - 1);
 
         // k1
         for (size_t j = 0; j < n; j++)
         {
-            k1.ptr[j] = func[j]((*t)[i - 1], get_r(m, i - 1));
+            k1.ptr[j] = func[j](t_.ptr[i - 1], get_r(m, i - 1));
         }
 
         // k2
-        v_add_v_factor_tmp(tmp, row, k1, h / 2);
+        v_add_v_factor_tmp(&tmp, row, k1, h / 2);
         for (size_t j = 0; j < n; j++)
         {
-            k2.ptr[j] = func[j]((*t)[i - 1] + h / 2, tmp.ptr);
+            k2.ptr[j] = func[j](t_.ptr[i - 1] + h / 2, tmp.ptr);
         }
 
         // k3
-        v_add_v_factor_tmp(tmp, row, k2, h / 2);
+        v_add_v_factor_tmp(&tmp, row, k2, h / 2);
         for (size_t j = 0; j < n; j++)
         {
-            k3.ptr[j] = func[j]((*t)[i - 1] + h / 2, tmp.ptr);
+            k3.ptr[j] = func[j](t_.ptr[i - 1] + h / 2, tmp.ptr);
         }
 
         // k4
-        v_add_v_factor_tmp(tmp, row, k3, h);
+        v_add_v_factor_tmp(&tmp, row, k3, h);
         for (size_t j = 0; j < n; j++)
         {
-            k3.ptr[j] = func[j]((*t)[i - 1] + h, tmp.ptr);
+            k3.ptr[j] = func[j](t_.ptr[i - 1] + h, tmp.ptr);
         }
 
-        // calculate next t and y
+        // calculate next y
         for (size_t j = 0; j < n; j++)
         {
-            (*t)[i] = (*t)[i - 1] + h;
             set(m, i, j, get_e(m, i - 1, j) + h / 6 * (k1.ptr[j] + 2 * (k2.ptr[j] + k3.ptr[j]) + k4.ptr[j]));
         }
+
+        // calculate next t
+        t_.ptr[i] = t_.ptr[i - 1] + h;
     }
 
-    delete_v(k1);
-    delete_v(k2);
-    delete_v(k3);
-    delete_v(k4);
-    delete_v(tmp);
+    delete_v(&k1);
+    delete_v(&k2);
+    delete_v(&k3);
+    delete_v(&k4);
+    delete_v(&tmp);
+    // no free of row!!!
+
+    // point input pointers to matrix m and array t_
+    *t = t_.ptr;
+    *y = m.ptr;
+    UNUSED(t);
+    UNUSED(y);
 
     return size;
 }

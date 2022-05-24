@@ -4,12 +4,12 @@
 
 typedef struct matrix
 {
-    double **pptr; // address of array
-    size_t r;      // number of rows
-    size_t c;      // number of columns
+    double *ptr; // first element of array
+    size_t r;    // number of rows
+    size_t c;    // number of columns
 } matrix;
 
-void create_m(matrix m);
+void create_m(matrix *m);
 void delete_m(matrix m);
 double get_e(matrix m, size_t i, size_t j);           // get element
 double *get_r(matrix m, size_t i);                    // get row

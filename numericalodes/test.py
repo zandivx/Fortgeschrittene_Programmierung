@@ -16,6 +16,5 @@ plt.plot(sol.t, sol.y[0], "--", label=f"solve_ivp")
 
 
 plt.plot(t, df["y0"], label="self")
-# plt.plot(t, np.cos(t), label="sine")
 plt.legend()
-plt.savefig("output/array2.pdf")
+plt.savefig("output/game3.pdf")

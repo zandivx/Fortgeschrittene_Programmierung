@@ -6,29 +6,34 @@
 // https://www.geeksforgeeks.org/dynamically-allocate-2d-array-c/
 // https://codereview.stackexchange.com/questions/159301/matrices-in-c-implementation
 
-void create_m(matrix m)
+void create_m(matrix *m)
 {
-    *m.pptr = malloc(m.r * m.c * sizeof(double));
+    void *tmp = NULL;
+    tmp = malloc(m->r * m->c * sizeof(double));
+    if (tmp)
+    {
+        m->ptr = (double *)tmp;
+    }
 }
 
 void delete_m(matrix m)
 {
-    free(*m.pptr);
+    free(m.ptr);
 }
 
 double get_e(matrix m, size_t i, size_t j)
 {
-    return *(*m.pptr + i * m.c + j);
+    return *(m.ptr + i * m.c + j);
 }
 
 double *get_r(matrix m, size_t i)
 {
-    return *m.pptr + i * m.c;
+    return m.ptr + i * m.c;
 }
 
 void set(matrix m, size_t i, size_t j, double value)
 {
-    *(*m.pptr + i * m.c + j) = value;
+    *(m.ptr + i * m.c + j) = value;
 }
 
 void transpose(matrix m)
