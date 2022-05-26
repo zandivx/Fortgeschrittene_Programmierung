@@ -36,16 +36,20 @@ void set(matrix m, size_t i, size_t j, double value)
     *(m.ptr + i * m.c + j) = value;
 }
 
-void transpose(matrix m)
-{
-    for (size_t i = 0; i < m.r; i++)
-    {
-        for (size_t j = 0; j < m.c; j++)
-        {
-            set(m, i, j, get_e(m, j, i));
-        }
-    }
-}
+// void transpose(matrix *m)
+// {
+//     size_t tmp;
+//     for (size_t i = 0; i < m->r; i++)
+//     {
+//         for (size_t j = 0; j < m->c; j++)
+//         {
+//             set(*m, i, j, get_e(*m, j, i));
+//         }
+//     }
+//     tmp = m->c;
+//     m->c = m->r;
+//     m->r = tmp;
+// }
 
 void print_m(matrix m)
 {

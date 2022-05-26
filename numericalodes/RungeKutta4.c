@@ -44,13 +44,9 @@ size_t RK4single(double **t, double **y, double (*func)(double, double), double 
 
 size_t RK4vector(double **t, double **y, double (**func)(double, double *), size_t n, double t0, double tmax, double *y0, double h)
 {
-    /*
-    t: pointer to array
-    y: pointer to 2-dim array (matrix)
-    */
-
     // declare variables
     const size_t size = ceil((tmax - t0) / h);
+    double matrix_element = 0;
     vector k1 = {NULL, n};
     vector k2 = {NULL, n};
     vector k3 = {NULL, n};
@@ -78,7 +74,7 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
     t_.ptr[size - 1] = tmax;
 
     // partially initialize matrix
-    memcpy((void *)m.ptr, (void *)y0, n * sizeof(double));
+    memcpy(m.ptr, y0, n * sizeof(double));
 
     // axis 0
     for (size_t i = 1; i < size; i++)
@@ -89,34 +85,35 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
         // k1
         for (size_t j = 0; j < n; j++)
         {
-            k1.ptr[j] = func[j](t_.ptr[i - 1], get_r(m, i - 1));
+            k1.ptr[j] = func[j](t_.ptr[i - 1], row.ptr);
         }
 
         // k2
-        v_add_v_factor_tmp(&tmp, row, k1, h / 2);
+        v_add_v_factor_tmp(tmp, row, k1, h / 2);
         for (size_t j = 0; j < n; j++)
         {
             k2.ptr[j] = func[j](t_.ptr[i - 1] + h / 2, tmp.ptr);
         }
 
         // k3
-        v_add_v_factor_tmp(&tmp, row, k2, h / 2);
+        v_add_v_factor_tmp(tmp, row, k2, h / 2);
         for (size_t j = 0; j < n; j++)
         {
             k3.ptr[j] = func[j](t_.ptr[i - 1] + h / 2, tmp.ptr);
         }
 
         // k4
-        v_add_v_factor_tmp(&tmp, row, k3, h);
+        v_add_v_factor_tmp(tmp, row, k3, h);
         for (size_t j = 0; j < n; j++)
         {
-            k3.ptr[j] = func[j](t_.ptr[i - 1] + h, tmp.ptr);
+            k4.ptr[j] = func[j](t_.ptr[i - 1] + h, tmp.ptr);
         }
 
         // calculate next y
         for (size_t j = 0; j < n; j++)
         {
-            set(m, i, j, get_e(m, i - 1, j) + h / 6 * (k1.ptr[j] + 2 * (k2.ptr[j] + k3.ptr[j]) + k4.ptr[j]));
+            matrix_element = get_e(m, i - 1, j) + h / 6 * (k1.ptr[j] + 2 * (k2.ptr[j] + k3.ptr[j]) + k4.ptr[j]);
+            set(m, i, j, matrix_element);
         }
 
         // calculate next t
@@ -130,7 +127,7 @@ size_t RK4vector(double **t, double **y, double (**func)(double, double *), size
     delete_v(&tmp);
     // no free of row!!!
 
-    // point input pointers to matrix m and array t_
+    // point input pointers to array of matrix m and vector t_
     *t = t_.ptr;
     *y = m.ptr;
     UNUSED(t);

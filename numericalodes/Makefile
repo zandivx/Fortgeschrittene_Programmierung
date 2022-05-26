@@ -1,5 +1,5 @@
 CC            := gcc
-CCFLAGS       := -Wall -Wextra -pedantic -std=c17 -g -c  # -g: debugging -c: compile only, no linking
+CCFLAGS       := -Wall -Wextra -pedantic -std=c17 -ggdb3 -c  # -g: debugging (with macro info for gdb) -c: compile only, no linking
 LDFLAGS       := -lm  # linker flag
 OUTPUT        := a.out
 
