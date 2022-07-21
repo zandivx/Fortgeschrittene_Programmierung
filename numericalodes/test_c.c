@@ -1,6 +1,6 @@
-#include "RungeKutta4.h"
-#include "matrix.h"
-#include "vector.h"
+#include "src/RungeKutta4.h"
+#include "src/matrix.h"
+#include "src/vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

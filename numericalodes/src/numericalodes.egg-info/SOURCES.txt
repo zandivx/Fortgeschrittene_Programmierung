@@ -1,0 +1,6 @@
+numericalodes.c
+setup.py
+numericalodes.egg-info/PKG-INFO
+numericalodes.egg-info/SOURCES.txt
+numericalodes.egg-info/dependency_links.txt
+numericalodes.egg-info/top_level.txt

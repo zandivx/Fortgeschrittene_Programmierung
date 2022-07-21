@@ -12,6 +12,8 @@
 # README
 *.md.bak
 
+# venv
+**/venv_numodes
 
 
 ## LaTeX

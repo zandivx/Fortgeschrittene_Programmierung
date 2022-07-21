@@ -2,7 +2,9 @@
 #include <Python.h>
 #include "RungeKutta4.h"
 
-static PyObject *RK4(PyObject *self, PyObject *args)
+// https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
+
+static PyObject *test(PyObject *self, PyObject *args)
 {
     double y0, t0, tmax, h;
 
