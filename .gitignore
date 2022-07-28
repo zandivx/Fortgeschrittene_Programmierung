@@ -13,7 +13,7 @@
 *.md.bak
 
 # venv
-**/venv_numodes
+**/.venv
 
 
 ## LaTeX
