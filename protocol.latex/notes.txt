@@ -1,2 +1,9 @@
 RK4 in C (Formeln von Wikipedia) für eine alleinstehende DGL war leicht zu implementieren
 Problem bei Vektorisierung: would need syntax like in python: func(*array) (tuple unpacking)
+Problem umgangen durch Übergabe eines arrays anstatt einzelner Werte
+Fehler in source code (2x in k3 anstatt k3 und dann k4 geschrieben) gefunden und gefixed
+Rein von C-Seite funktionierts
+
+Beginn Implementierung mit Python-C-API
+PyArg_ParseTuple and then lots of error checking
+kein ernsthafter Versuch PyObject functions in function pointer array zu konvertieren, stattdessen PyObject_CallFunction in ursprünglichen C-Code eingebaut
