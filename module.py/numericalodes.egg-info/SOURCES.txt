@@ -1,3 +1,7 @@
+pyproject.toml
+setup.cfg
+setup.py
+numericalodes/numericalodes.c
 numericalodes.egg-info/PKG-INFO
 numericalodes.egg-info/SOURCES.txt
 numericalodes.egg-info/dependency_links.txt

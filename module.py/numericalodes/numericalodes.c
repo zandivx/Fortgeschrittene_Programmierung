@@ -47,7 +47,7 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     */
     if (!PyArg_ParseTuple(args, "OddOd", &PO_funcs, &t0, &tmax, &PO_y0, &h))
         // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: Unpacking");
+        return PyUnicode_FromString("Error: args unpacking");
 
     // check for sequences in PO_funcs and PO_y0
     if (!PySequence_Check(PO_funcs) || !PySequence_Check(PO_y0))
@@ -64,12 +64,21 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     // Create C array to unpack Python function tuple into
     if (malloc_save(&PO_func_array, n, sizeof(PyObject)))
         // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: malloc");
+        return PyUnicode_FromString("Error: malloc PO_func_array");
 
     // Unpack function tuple into array
     // https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
         PO_func_array[i] = PySequence_GetItem(PO_funcs, i);
+
+    // Create C array to unpack Python y0 tuple into
+    if (malloc_save(&y0, n, sizeof(PyObject)))
+        // TODO: write proper exception handling
+        return PyUnicode_FromString("Error: malloc y0");
+
+    // Unpack y0 tuple into array
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
+        y0[i] = PySequence_GetItem(PO_y0, i);
 
     //! TODO: unpack Py y0 into C array
 
@@ -103,8 +112,8 @@ array of functions (methods) implemented in this module, terminated with a "null
 [3]: docstring
 */
 static PyMethodDef numericalodes_methods[] = {
-    {"RK4", RK4, METH_VARARGS, "Python interface for Runge-Kutta algorithms written as a C library function"},
-    {NULL, NULL, 0, NULL}};
+    {"RK4", (PyCFunction)RK4, METH_VARARGS, "Python interface for Runge-Kutta algorithms written as a C library function"},
+    {NULL}};
 
 /*
 bundle up the module
