@@ -6,103 +6,193 @@
 
 #define UNUSED(x) (void)(x)
 
-// https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
+/*
+important concept:
+https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
+*/
 
-int malloc_save(void **ptr, size_t size, int size_of)
+int malloc_save(void **ptr, size_t size, unsigned int size_of)
 {
-    void *tmp;
+    void *tmp = NULL;
 
     tmp = malloc(size * size_of);
 
     if (tmp)
     {
         *ptr = tmp;
-        return 0;
+        return 1;
     }
     else
     {
-        return -1;
+        return 0;
     }
 }
 
+int unpack_save(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
+{
+    PyObject *tmp = NULL;
+
+    tmp = PySequence_GetItem(sequence, loc);
+
+    if (tmp)
+    {
+        *dest = tmp;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+// Functions to call in Python -----------------------------------------------------------------------------
+
 static PyObject *RK4(PyObject *self, PyObject *args)
 {
-
-    size_t n;                 // size of func array
-    size_t size;              // amount of moments in calculated vectors
-    double *t;                // pointer to vector elements of moments
-    double *Y;                // pointer to matrix elements of function values at moments t
-    double t0;                // first moment
-    double tmax;              // last moment
-    double h;                 // step-size between moments
-    double *y0;               // inital array at position t=t0
-    PyObject *PO_funcs;       // Python object of functions tuple
-    PyObject *PO_y0;          // Python object of y0 tuple
-    PyObject **PO_func_array; // Array of Python functions unpacked from Python tuple
+    size_t n = 0;                    // size of func array
+    size_t size = 0;                 // amount of moments in calculated vectors
+    double *t = NULL;                // pointer to vector elements of moments
+    double *y = NULL;                // pointer to matrix elements of function values at moments t
+    double t0 = 0;                   // first moment
+    double tmax = 0;                 // last moment
+    double h = 0;                    // step-size between moments
+    double *y0 = NULL;               // inital array at position t=t0
+    PyObject *funcs = NULL;          // Python object of functions tuple
+    PyObject *PO_y0 = NULL;          // Python object of y0 tuple
+    PyObject **array_PO_func = NULL; // Array of Python functions unpacked from Python tuple
+    PyObject *tuple_t = NULL;        // tuple of moments
+    PyObject *tuple_y = NULL;        // tuple of calculated values
+    PyObject *tuple_rv = NULL;       // tuple of return values
+    PyObject *PO_tmp = NULL;         // temporary Python Object
 
     /*
     Parse arguments:
     d: double
     O: PyObject*
     */
-    if (!PyArg_ParseTuple(args, "OddOd", &PO_funcs, &t0, &tmax, &PO_y0, &h))
-        // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: args unpacking");
+    if (!PyArg_ParseTuple(args, "OddOd", &funcs, &t0, &tmax, &PO_y0, &h))
+    {
+        PyErr_SetString(PyExc_TypeError, "Given arguments do not match types: [PyObject, double, double, PyObject, double]");
+        return NULL;
+    }
 
-    // check for sequences in PO_funcs and PO_y0
-    if (!PySequence_Check(PO_funcs) || !PySequence_Check(PO_y0))
-        // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: Sequence checking");
+    // check for sequences in funcs and PO_y0
+    if (!PySequence_Check(funcs) || !PySequence_Check(PO_y0))
+    {
+        PyErr_SetString(PyExc_TypeError, "'funcs' and 'y0' are not of type 'Sequence'");
+        return NULL;
+    }
 
     // check for equal length
-    if (PySequence_Length(PO_funcs) == PySequence_Length(PO_y0))
+    if (PySequence_Length(funcs) == PySequence_Length(PO_y0))
+    {
         n = (size_t)PySequence_Length(PO_y0);
+    }
     else
-        // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: Length comparison");
+    {
+        PyErr_SetString(PyExc_ValueError, "Sequences 'funcs' and 'y0' are not of same length");
+        return NULL;
+    }
 
     // Create C array to unpack Python function tuple into
-    if (malloc_save(&PO_func_array, n, sizeof(PyObject)))
-        // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: malloc PO_func_array");
+    if (!malloc_save((void **)&array_PO_func, n, sizeof(PyObject *)))
+    {
+        PyErr_SetString(PyExc_SystemError, "malloc array_PO_func");
+        return NULL;
+    }
 
     // Unpack function tuple into array
     // https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
-        PO_func_array[i] = PySequence_GetItem(PO_funcs, i);
+    {
+        if (!unpack_save(&PO_tmp, funcs, i))
+        {
+            PyErr_SetString(PyExc_LookupError, "Unpacking of funcs to array_PO_func");
+            return NULL;
+        }
+        else
+        {
+            if (PyCallable_Check(PO_tmp))
+            {
+                array_PO_func[i] = PO_tmp;
+                PO_tmp = NULL;
+            }
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "Elements of sequence 'funcs' are not callables");
+                return NULL;
+            }
+        }
+    }
 
     // Create C array to unpack Python y0 tuple into
-    if (malloc_save(&y0, n, sizeof(PyObject)))
-        // TODO: write proper exception handling
-        return PyUnicode_FromString("Error: malloc y0");
+    if (!malloc_save((void **)&y0, n, sizeof(PyObject *)))
+    {
+        PyErr_SetString(PyExc_SystemError, "malloc y0");
+        return NULL;
+    }
 
     // Unpack y0 tuple into array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
-        y0[i] = PySequence_GetItem(PO_y0, i);
+    {
+        if (!unpack_save(&PO_tmp, PO_y0, i))
+        {
+            PyErr_SetString(PyExc_LookupError, "Unpacking of PO_y0 to y0");
+            return NULL;
+        }
+        else
+        {
+            if (PyFloat_Check(PO_tmp) || PyLong_Check(PO_tmp))
+            {
+                y0[i] = PyFloat_AsDouble(PO_tmp);
+                PO_tmp = NULL;
+            }
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "Elements of sequence 'y0' are not numbers");
+                return NULL;
+            }
+        }
+    }
 
-    //! TODO: unpack Py y0 into C array
+    // sanity checks for input numbers
+    if (t0 >= tmax)
+    {
+        PyErr_SetString(PyExc_TypeError, "'tmax' has to be greater than 't0'");
+        return NULL;
+    }
 
-    /*
-    //! TODO: PyObject_CallObject / PyObject_CallFunction
-    // convert python function to c function via a wrapper
+    if (h <= 0)
+    {
+        PyErr_SetString(PyExc_TypeError, "'h' has to be greater than 0");
+        return NULL;
+    }
 
-    rv = PyObject_CallFunction(PO_func_array[0], "d", t0);
-    if (rv)
-        return rv;
-    else
-        return PyUnicode_FromString("Error: CallObject");
-    */
+    // Calculation ---------------------------------------------------------
 
-    size = RK4vector(&t, &Y, PO_func_array, n, t0, tmax, y0, 0.1);
+    size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
+    matrix m = {y, size, n};
+
+    // https://stackoverflow.com/a/16401126/16527499
+    tuple_t = PyTuple_New(size);
+    tuple_y = PyTuple_New(n);
+    tuple_rv = PyTuple_New(2);
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
+    {
+        PO_tmp = PyTuple_New(size);
+    }
 
     // sanitize
-    free(PO_func_array);
-    UNUSED(y0);
-    UNUSED(Y);
     UNUSED(t);
+    UNUSED(y);
+    free(array_PO_func);
+    free(y0);
 
     return PyUnicode_FromString("Made it till the end");
-};
+}
+
+// General setup -----------------------------------------------------------------------------------------------------------
 
 /*
 array of functions (methods) implemented in this module, terminated with a "null-function"

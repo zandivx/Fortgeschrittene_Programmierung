@@ -1,0 +1,1 @@
+j num && cd module.py && python3 setup.py install && python3 ./test/test_c_api.py

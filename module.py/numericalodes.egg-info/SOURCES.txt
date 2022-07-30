@@ -1,7 +1,8 @@
-pyproject.toml
-setup.cfg
 setup.py
+numericalodes/RungeKutta4Py.c
+numericalodes/matrix.c
 numericalodes/numericalodes.c
+numericalodes/vector.c
 numericalodes.egg-info/PKG-INFO
 numericalodes.egg-info/SOURCES.txt
 numericalodes.egg-info/dependency_links.txt
