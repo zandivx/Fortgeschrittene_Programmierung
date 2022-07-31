@@ -168,28 +168,63 @@ static PyObject *RK4(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Calculation ---------------------------------------------------------
+    // Calculation --------------------------------------------------------------------------------------
 
     size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
     matrix m = {y, size, n};
+
+    // Building return tuple ----------------------------------------------------------------------------
 
     // https://stackoverflow.com/a/16401126/16527499
     tuple_t = PyTuple_New(size);
     tuple_y = PyTuple_New(n);
     tuple_rv = PyTuple_New(2);
 
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)size; i++)
+    {
+        if (PyTuple_SetItem(tuple_t, i, PyFloat_FromDouble(t[i])))
+        {
+            PyErr_Format(PyExc_IndexError, "Setting return vector t: out of bounds (i=%i, size=%i)", i, size);
+            return NULL;
+        }
+    }
+
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
         PO_tmp = PyTuple_New(size);
+        for (Py_ssize_t j = 0; j < (Py_ssize_t)size; j++)
+        {
+            if (PyTuple_SetItem(PO_tmp, j, PyFloat_FromDouble(get_e(m, i, j))))
+            {
+                PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (j=%i, size=%i)", j, size);
+                return NULL;
+            }
+        }
+        if (PyTuple_SetItem(tuple_y, i, PO_tmp))
+        {
+            PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%i, n=%i)", i, n);
+            return NULL;
+        }
+        PO_tmp = NULL;
+    }
+
+    if (PyTuple_SetItem(tuple_rv, 0, tuple_t) || PyTuple_SetItem(tuple_rv, 1, tuple_y))
+    {
+        PyErr_SetString(PyExc_IndexError, "Setting return tuple rv: out of bounds");
+        return NULL;
     }
 
     // sanitize
+    //! TODO: decrease references
     UNUSED(t);
     UNUSED(y);
     free(array_PO_func);
     free(y0);
+    free(t);
+    free(y);
 
-    return PyUnicode_FromString("Made it till the end");
+    // return PyUnicode_FromString("Made it till the end");
+    return tuple_rv;
 }
 
 // General setup -----------------------------------------------------------------------------------------------------------
