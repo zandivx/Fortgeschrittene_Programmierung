@@ -71,6 +71,7 @@ def main() -> None:
         plt.plot(t_analytic, analytic(t_analytic), label="analytic")
         plt.legend()
         plt.grid()
+        plt.show()
 
 
 if __name__ == "__main__":

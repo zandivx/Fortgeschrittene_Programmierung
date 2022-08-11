@@ -11,7 +11,7 @@ important concept:
 https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
 */
 
-int malloc_save(void **ptr, size_t size, unsigned int size_of)
+int malloc_fail(void **ptr, size_t size, unsigned int size_of)
 {
     void *tmp = NULL;
 
@@ -20,15 +20,15 @@ int malloc_save(void **ptr, size_t size, unsigned int size_of)
     if (tmp)
     {
         *ptr = tmp;
-        return 1;
+        return 0;
     }
     else
     {
-        return 0;
+        return -1;
     }
 }
 
-int unpack_save(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
+int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
 {
     PyObject *tmp = NULL;
 
@@ -37,11 +37,11 @@ int unpack_save(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
     if (tmp)
     {
         *dest = tmp;
-        return 1;
+        return 0;
     }
     else
     {
-        return 0;
+        return -1;
     }
 }
 
@@ -87,6 +87,11 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     if (PySequence_Length(funcs) == PySequence_Length(PO_y0))
     {
         n = (size_t)PySequence_Length(PO_y0);
+        if (n == 0)
+        {
+            PyErr_SetString(PyExc_ValueError, "Sequences 'funcs' and 'y0' must not be of length 0");
+            return NULL;
+        }
     }
     else
     {
@@ -95,7 +100,7 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     }
 
     // Create C array to unpack Python function tuple into
-    if (!malloc_save((void **)&array_PO_func, n, sizeof(PyObject *)))
+    if (malloc_fail((void **)&array_PO_func, n, sizeof(PyObject *)))
     {
         PyErr_SetString(PyExc_SystemError, "malloc array_PO_func");
         return NULL;
@@ -105,13 +110,14 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     // https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
-        if (!unpack_save(&PO_tmp, funcs, i))
+        if (unpack_fail(&PO_tmp, funcs, i))
         {
             PyErr_SetString(PyExc_LookupError, "Unpacking of funcs to array_PO_func");
             return NULL;
         }
         else
         {
+            // Check wheter unpacked elements are Callables
             if (PyCallable_Check(PO_tmp))
             {
                 array_PO_func[i] = PO_tmp;
@@ -126,7 +132,7 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     }
 
     // Create C array to unpack Python y0 tuple into
-    if (!malloc_save((void **)&y0, n, sizeof(PyObject *)))
+    if (malloc_fail((void **)&y0, n, sizeof(PyObject *)))
     {
         PyErr_SetString(PyExc_SystemError, "malloc y0");
         return NULL;
@@ -135,13 +141,14 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     // Unpack y0 tuple into array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
-        if (!unpack_save(&PO_tmp, PO_y0, i))
+        if (unpack_fail(&PO_tmp, PO_y0, i))
         {
             PyErr_SetString(PyExc_LookupError, "Unpacking of PO_y0 to y0");
             return NULL;
         }
         else
         {
+            // Check wheter unpacked elements are numbers (float or int)
             if (PyFloat_Check(PO_tmp) || PyLong_Check(PO_tmp))
             {
                 y0[i] = PyFloat_AsDouble(PO_tmp);
@@ -176,6 +183,8 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     // Building return tuple ----------------------------------------------------------------------------
 
     // https://stackoverflow.com/a/16401126/16527499
+    // Return value: New (strong) reference
+    // PyTuple_SetItem steals references, so no decref'ing needed
     tuple_t = PyTuple_New(size);
     tuple_y = PyTuple_New(n);
     tuple_rv = PyTuple_New(2);
@@ -205,7 +214,6 @@ static PyObject *RK4(PyObject *self, PyObject *args)
             PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%i, n=%i)", i, n);
             return NULL;
         }
-        PO_tmp = NULL;
     }
 
     if (PyTuple_SetItem(tuple_rv, 0, tuple_t) || PyTuple_SetItem(tuple_rv, 1, tuple_y))
@@ -215,7 +223,6 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     }
 
     // sanitize
-    //! TODO: decrease references
     UNUSED(t);
     UNUSED(y);
     free(array_PO_func);
@@ -223,7 +230,6 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     free(t);
     free(y);
 
-    // return PyUnicode_FromString("Made it till the end");
     return tuple_rv;
 }
 
