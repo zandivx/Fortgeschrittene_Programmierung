@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
-Name: numericalodes
+Name: numericalodesc
 Version: 0.1
-Summary: C Extension Module to calculate systems of ODEs numeracally similar to scipy.integrate.solve_ipv.This is a learning project for the Technical University of Graz
+Summary: C Extension Module to calculate systems of ODEs numeracally similar to scipy.integrate.solve_ipv.This is a voluntary project for the Technical University of Graz
 Home-page: https://github.com/zandivx/numericalodes
 Author: Andreas Zach
 Author-email: andreas.zach@student.tugraz.at

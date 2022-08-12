@@ -45,7 +45,7 @@ int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
     }
 }
 
-// Functions to call in Python -----------------------------------------------------------------------------
+// Functions to call in Python ----------------------------------------------------------------------------
 
 static PyObject *RK4(PyObject *self, PyObject *args)
 {
@@ -175,12 +175,12 @@ static PyObject *RK4(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Calculation --------------------------------------------------------------------------------------
+    // Calculation ------------------------------------------------------------------------
 
     size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
     matrix m = {y, size, n};
 
-    // Building return tuple ----------------------------------------------------------------------------
+    // Building return tuple ------------------------------------------------------------------------
 
     // https://stackoverflow.com/a/16401126/16527499
     // Return value: New (strong) reference
@@ -242,7 +242,7 @@ array of functions (methods) implemented in this module, terminated with a "null
 [2]: macro whether function takes arguments (and of which type)
 [3]: docstring
 */
-static PyMethodDef numericalodes_methods[] = {
+static PyMethodDef numericalodesc_methods[] = {
     {"RK4", (PyCFunction)RK4, METH_VARARGS, "Python interface for Runge-Kutta algorithms written as a C library function"},
     {NULL}};
 
@@ -254,17 +254,17 @@ bundle up the module
 [3]: amount of memory needed to store the program state (negative value: no support for sub-interpreters)
 [4]: array of fuctions
 */
-static struct PyModuleDef numericalodes_module = {
+static struct PyModuleDef numericalodesc_module = {
     PyModuleDef_HEAD_INIT,
-    "numericalodes",
+    "numericalodesc",
     "Python interface for Runge-Kutta algorithms written as a C library function",
     -1,
-    numericalodes_methods};
+    numericalodesc_methods};
 
 /*
 Initialize the module with PyInit_MODULENAME
 */
-PyMODINIT_FUNC PyInit_numericalodes(void)
+PyMODINIT_FUNC PyInit_numericalodesc(void)
 {
-    return PyModule_Create(&numericalodes_module);
+    return PyModule_Create(&numericalodesc_module);
 }

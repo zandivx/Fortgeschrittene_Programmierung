@@ -7,3 +7,5 @@ Rein von C-Seite funktionierts
 Beginn Implementierung mit Python-C-API
 PyArg_ParseTuple and then lots of error checking
 kein ernsthafter Versuch PyObject functions in function pointer array zu konvertieren, stattdessen PyObject_CallFunction in ursprünglichen C-Code eingebaut
+Return tuple built with PyTuple_SetItem and for loops
+No manual Py_DECREF needed as PyTuple_SetItem steals references
