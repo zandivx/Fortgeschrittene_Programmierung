@@ -1,8 +1,11 @@
 README.md
 pyproject.toml
-numericalodespy/RungeKutta4Vector.py
+numericalodespy/RungeKutta4Vec.py
 numericalodespy/__init__.py
 numericalodespy.egg-info/PKG-INFO
 numericalodespy.egg-info/SOURCES.txt
 numericalodespy.egg-info/dependency_links.txt
 numericalodespy.egg-info/top_level.txt
+tests/__init__.py
+tests/test_code.py
+tests/test_py.py

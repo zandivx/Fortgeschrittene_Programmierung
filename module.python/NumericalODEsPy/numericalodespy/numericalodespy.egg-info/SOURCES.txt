@@ -1,0 +1,6 @@
+README.md
+pyproject.toml
+numericalodespy/numericalodespy.egg-info/PKG-INFO
+numericalodespy/numericalodespy.egg-info/SOURCES.txt
+numericalodespy/numericalodespy.egg-info/dependency_links.txt
+numericalodespy/numericalodespy.egg-info/top_level.txt

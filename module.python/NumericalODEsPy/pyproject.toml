@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools"]
-
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "numericalodespy"
@@ -8,3 +8,7 @@ version = "0.1"
 description = "Python part of numericalodes"
 readme = "README.md"
 requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+exclude = ["dev"]
+namespaces = false

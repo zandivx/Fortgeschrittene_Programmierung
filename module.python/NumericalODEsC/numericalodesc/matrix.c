@@ -1,7 +1,7 @@
-#include "matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include "matrix.h"
 
 // https://www.geeksforgeeks.org/dynamically-allocate-2d-array-c/
 // https://codereview.stackexchange.com/questions/159301/matrices-in-c-implementation
@@ -68,4 +68,21 @@ void fprint_m(matrix m, char *path)
     }
     fclose(file);
     printf("Wrote to path: %s\n", path);
+}
+
+void transpose(matrix *m)
+{
+    matrix tmp = {NULL, m->c, m->r};
+    create_m(&tmp);
+
+    for (size_t i = 0; i < m->r; i++)
+    {
+        for (size_t j = 0; j < m->c; j++)
+        {
+            set(tmp, j, i, get_e(*m, i, j));
+        }
+    }
+
+    delete_m(*m);
+    *m = tmp;
 }

@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: numericalodespy
+Version: 0.1
+Summary: Python part of numericalodes
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+This is the python implementation part of the Runge-Kutta algorithms of order 4.

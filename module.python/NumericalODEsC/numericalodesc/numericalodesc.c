@@ -179,6 +179,11 @@ static PyObject *RK4(PyObject *self, PyObject *args)
 
     size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
     matrix m = {y, size, n};
+    /*
+    size x n-->
+     |
+     V
+    */
 
     // Building return tuple ------------------------------------------------------------------------
 
@@ -193,7 +198,7 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     {
         if (PyTuple_SetItem(tuple_t, i, PyFloat_FromDouble(t[i])))
         {
-            PyErr_Format(PyExc_IndexError, "Setting return vector t: out of bounds (i=%i, size=%i)", i, size);
+            PyErr_Format(PyExc_IndexError, "Setting return vector t: out of bounds (i=%zu, size=%zu)", i, size);
             return NULL;
         }
     }
@@ -205,13 +210,15 @@ static PyObject *RK4(PyObject *self, PyObject *args)
         {
             if (PyTuple_SetItem(PO_tmp, j, PyFloat_FromDouble(get_e(m, i, j))))
             {
-                PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (j=%i, size=%i)", j, size);
+                PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (j=%zu, size=%zu)", j, size);
                 return NULL;
             }
         }
+
+        // i--> PO_tmp1, PO_tmp2, PO_tmp3, ...
         if (PyTuple_SetItem(tuple_y, i, PO_tmp))
         {
-            PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%i, n=%i)", i, n);
+            PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%zu, n=%zu)", i, n);
             return NULL;
         }
     }

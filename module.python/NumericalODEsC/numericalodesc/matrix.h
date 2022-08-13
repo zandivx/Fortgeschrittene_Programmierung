@@ -16,5 +16,6 @@ double *get_r(matrix m, size_t i);                    // get row
 void set(matrix m, size_t i, size_t j, double value); // set element
 void print_m(matrix m);
 void fprint_m(matrix m, char *path);
+void transpose(matrix *m);
 
 #endif

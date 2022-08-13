@@ -1,12 +1,12 @@
-#include "RungeKutta4Py.h"
-#include "vector.h"
-#include "matrix.h"
 #include <python3.10/Python.h>
 #include <stdio.h>  // printf
 #include <stdlib.h> // malloc, free
 #include <stddef.h> // size_t
 #include <string.h> // memcpy
 #include <math.h>   // ceil
+#include "RungeKutta4Py.h"
+#include "vector.h"
+#include "matrix.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -17,6 +17,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     // declare variables
     const size_t size = ceil((tmax - t0) / h);
     double matrix_element = 0;
+    double current_t = 0;
     vector k1 = {NULL, n};
     vector k2 = {NULL, n};
     vector k3 = {NULL, n};
@@ -51,34 +52,35 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     {
         // axis 1 loops
         row.ptr = get_r(m, i - 1);
+        current_t = t_.ptr[i - 1];
 
         // k1
         for (size_t j = 0; j < n; j++)
         {
             // PyObject_CallFunction
             // rv = PyObject_CallFunction(PO_func_array[0], "d", t0);
-            k1.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", t_.ptr[i - 1], row.ptr));
+            k1.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t, row.ptr));
         }
 
         // k2
         v_add_v_factor_tmp(tmp, row, k1, h / 2);
         for (size_t j = 0; j < n; j++)
         {
-            k2.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", t_.ptr[i - 1] + h / 2, tmp.ptr));
+            k2.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h / 2, tmp.ptr));
         }
 
         // k3
         v_add_v_factor_tmp(tmp, row, k2, h / 2);
         for (size_t j = 0; j < n; j++)
         {
-            k3.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", t_.ptr[i - 1] + h / 2, tmp.ptr));
+            k3.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h / 2, tmp.ptr));
         }
 
         // k4
         v_add_v_factor_tmp(tmp, row, k3, h);
         for (size_t j = 0; j < n; j++)
         {
-            k4.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", t_.ptr[i - 1] + h, tmp.ptr));
+            k4.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h, tmp.ptr));
         }
 
         // calculate next y
@@ -89,7 +91,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         }
 
         // calculate next t
-        t_.ptr[i] = t_.ptr[i - 1] + h;
+        t_.ptr[i] = current_t + h;
     }
 
     delete_v(&k1);
