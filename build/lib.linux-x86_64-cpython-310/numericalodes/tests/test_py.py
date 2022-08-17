@@ -1,4 +1,5 @@
-import numericalodes
+import numericalodespy
+import numericalodesc
 import numpy as np
 import matplotlib.pyplot as plt
 from timeit import default_timer as ts
@@ -8,9 +9,9 @@ def main() -> None:
     tup = ([lambda t, y: y], 0, 3, [1], 1e-4)
 
     start = ts()
-    t, ypy = numericalodes.RK4py(*tup)  # type: ignore
+    t, ypy = numericalodespy.RK4(*tup)  # type: ignore
     py = ts()
-    _, yc = numericalodes.RK4c(*tup)
+    _, yc = numericalodesc.RK4(*tup)
     c = ts()
 
     print(f"Python: {py-start} s\nC: {c-py} s")

@@ -1,22 +1,15 @@
-import numericalodes
 import numpy as np
 import matplotlib.pyplot as plt
-from timeit import default_timer as ts
+import numericalodes
 
 
 def main() -> None:
     tup = ([lambda t, y: y], 0, 3, [1], 1e-4)
-
-    start = ts()
-    t, ypy = numericalodes.RK4py(*tup)  # type: ignore
-    py = ts()
+    t, ypy = numericalodes.RK4py(*tup)
     _, yc = numericalodes.RK4c(*tup)
-    c = ts()
 
-    print(f"Python: {py-start} s\nC: {c-py} s")
-
-    print(np.array(yc))
     print(np.array(ypy))
+    print(np.array(yc))
 
     plt.plot(t, ypy[0], label="Python")
     plt.plot(t, yc[0], label="C")

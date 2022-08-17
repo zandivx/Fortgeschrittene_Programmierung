@@ -47,7 +47,17 @@ int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
 
 // Functions to call in Python ----------------------------------------------------------------------------
 
-static PyObject *RK4(PyObject *self, PyObject *args)
+const char DOC_RK4c[] =
+    "Calculate the solution to the explicit system of differential equations y'=f(t,y) (with y and f as vectors) numerically"
+    "using the explicit Runge-Kutta algorithm of order 4 written in C.\n"
+    "'Sequence' is a Python object that supports the sequence protocol (e.g. a list or a tuple)\n"
+    "funcs: sequence\tentries of the vector f(t,y) (Callables)\n"
+    "t0: float\tleft border of the domain to calculate the solution on\n"
+    "tmax: float\tright border of the domain to calculate the solution on\n"
+    "y0: sequence\tentries of the vector with initial conditions at the moment t0\n"
+    "h: float\tstep size (distance between moments t)\n";
+
+static PyObject *RK4c(PyObject *self, PyObject *args)
 {
     size_t n = 0;                    // size of func array
     size_t size = 0;                 // amount of moments in calculated vectors
@@ -230,8 +240,8 @@ static PyObject *RK4(PyObject *self, PyObject *args)
     }
 
     // sanitize
-    UNUSED(t);
-    UNUSED(y);
+    // UNUSED(t);
+    // UNUSED(y);
     free(array_PO_func);
     free(y0);
     free(t);
@@ -244,34 +254,42 @@ static PyObject *RK4(PyObject *self, PyObject *args)
 
 /*
 array of functions (methods) implemented in this module, terminated with a "null-function"
-[0]: string of python function name
-[1]: C function to call
-[2]: macro whether function takes arguments (and of which type)
-[3]: docstring
+https://docs.python.org/3/c-api/structures.html#c.PyMethodDef
+[0]: ml_name    string    function name in Python
+[1]: ml_meth    pointer   to C function
+[2]: ml_flags   int       calling convention bit (see documentation)
+[3]: ml_doc     string    docstring
 */
-static PyMethodDef numericalodesc_methods[] = {
-    {"RK4", (PyCFunction)RK4, METH_VARARGS, "Python interface for Runge-Kutta algorithms written as a C library function"},
-    {NULL}};
+static PyMethodDef c_methods[] = {
+    {"RK4c", (PyCFunction)RK4c, METH_VARARGS, DOC_RK4c},
+    {NULL, NULL, 0, NULL}};
 
 /*
 bundle up the module
-[0]: macro
-[1]: module name
-[2]: docstring
-[3]: amount of memory needed to store the program state (negative value: no support for sub-interpreters)
-[4]: array of fuctions
+[0]: m_base      macro        always PyModuleDef_HEAD_INIT
+[1]: m_name      string       module name
+[2]: m_doc       string       docstring
+[3]: m_size      Py_ssize_t   amount of memory needed to store the program state (-1: no support for sub-interpreters)
+[4]: m_methods   array  	  array of fuctions (PyMethodDef[])
+[5]: m_slots
+[6]: m_traverse
+[7]: m_clear
+[8]: m_free
 */
-static struct PyModuleDef numericalodesc_module = {
+
+const char DOC_c[] = "C extension module with a function to calculate the solution of explicit systems of differential equations numerically.\n";
+
+static struct PyModuleDef c_module = {
     PyModuleDef_HEAD_INIT,
-    "numericalodesc",
-    "Python interface for Runge-Kutta algorithms written as a C library function",
+    "c",
+    DOC_c,
     -1,
-    numericalodesc_methods};
+    c_methods};
 
 /*
 Initialize the module with PyInit_MODULENAME
 */
-PyMODINIT_FUNC PyInit_numericalodesc(void)
+PyMODINIT_FUNC PyInit_c(void)
 {
-    return PyModule_Create(&numericalodesc_module);
+    return PyModule_Create(&c_module);
 }
