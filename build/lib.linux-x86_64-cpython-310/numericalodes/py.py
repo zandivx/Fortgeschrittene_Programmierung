@@ -48,16 +48,17 @@ def RK4py(
         cur_t = t[i - 1]
 
         for j in range(n):
-            k1[j] = funcs[j](cur_t, *cur_row)
+            k1[j] = funcs[j](cur_t, list(cur_row))
 
         for j in range(n):
-            k2[j] = funcs[j](cur_t + h / 2, *map(f_add_f_factor, cur_row, repeat(h / 2), k1))
+
+            k2[j] = funcs[j](cur_t + h / 2, list(map(f_add_f_factor, cur_row, repeat(h / 2), k1)))
 
         for j in range(n):
-            k3[j] = funcs[j](cur_t + h / 2, *map(f_add_f_factor, cur_row, repeat(h / 2), k2))
+            k3[j] = funcs[j](cur_t + h / 2, list(map(f_add_f_factor, cur_row, repeat(h / 2), k2)))
 
         for j in range(n):
-            k4[j] = funcs[j](cur_t + h, *map(f_add_f_factor, cur_row, repeat(h), k3))
+            k4[j] = funcs[j](cur_t + h, list(map(f_add_f_factor, cur_row, repeat(h), k3)))
 
         for j in range(n):
             y[i][j] = y[i - 1][j] + h / 6 * (k1[j] + 2 * (k2[j] + k3[j]) + k4[j])

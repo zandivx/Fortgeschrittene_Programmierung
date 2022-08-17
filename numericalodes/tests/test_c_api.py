@@ -1,34 +1,34 @@
 # type: ignore
 import numpy as np
 from matplotlib import pyplot as plt
-from numericalodesc import RK4
+from numericalodes import RK4c
 
 TRIGGER = False
 
 
 def trigger_PyArg_ParseTuple():
-    RK4(0)
+    RK4c(0)
 
 
 def trigger_PySequence_Check():
-    RK4(0, 0, 0, 0, 0)
+    RK4c(0, 0, 0, 0, 0)
 
 
 def trigger_PySequence_Length():
-    RK4([0, 0], 0, 0, [0], 0)
+    RK4c([0, 0], 0, 0, [0], 0)
 
 
 def trigger_PyCallable_Check():
-    RK4([0, 0], 0, 0, [0, 0], 0)
+    RK4c([0, 0], 0, 0, [0, 0], 0)
 
 
 def trigger_PyNumber_Check():
-    RK4([np.sin], 0, 0, ["string"], 0)
+    RK4c([np.sin], 0, 0, ["string"], 0)
 
 
 def trigger_sanity_checks():
-    RK4([np.sin], 0, -1, [0], 1)
-    RK4([np.sin], 0, 1, [0], 0)
+    RK4c([np.sin], 0, -1, [0], 1)
+    RK4c([np.sin], 0, 1, [0], 0)
 
 
 def trigger():
@@ -47,14 +47,14 @@ def trigger():
 
 
 def test_linear():
-    rv = RK4([lambda t, y: 4], 0, 1, [0], 1e-1)
+    rv = RK4c([lambda t, y: 4], 0, 1, [0], 1e-1)
     t = np.array(rv[0])
     y = np.array(rv[1][0])
     return t, y
 
 
 def test_exp():
-    rv = RK4([lambda t, y: y], 0, 5, [1], 1e-4)
+    rv = RK4c([lambda t, y: y[0]], 0, 5, [1], 1e-4)
     t = np.array(rv[0])
     y = np.array(rv[1][0])
     return t, y

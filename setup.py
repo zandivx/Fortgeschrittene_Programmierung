@@ -22,14 +22,15 @@ with open("README.md") as f:
 
 setup(
     name="numericalodes",
-    version="1.0.dev25",
+    # https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/
+    version="1.0.dev26",
     # compare: DOC_numericalodesc
     description="Package with functions to calculate systems of ODEs numeracally similar to scipy.integrate.solve_ipv",
     long_description=long_desc,
     author="Andreas Zach",
     author_email="andreas.zach@student.tugraz.at",
     url="https://github.com/zandivx/numericalodes",
-    license="MIT License",
+    license="MIT",
     # https://stackoverflow.com/questions/7948494/whats-the-difference-between-a-python-module-and-a-python-package
     packages=["numericalodes", "numericalodes.tests"],
     ext_modules=[c],

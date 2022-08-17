@@ -82,7 +82,7 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
     */
     if (!PyArg_ParseTuple(args, "OddOd", &funcs, &t0, &tmax, &PO_y0, &h))
     {
-        PyErr_SetString(PyExc_TypeError, "Given arguments do not match types: [PyObject, double, double, PyObject, double]");
+        PyErr_SetString(PyExc_TypeError, "Given arguments do not match types: [PyObject*, double, double, PyObject*, double]");
         return NULL;
     }
 
@@ -135,7 +135,7 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
             }
             else
             {
-                PyErr_SetString(PyExc_TypeError, "Elements of sequence 'funcs' are not callables");
+                PyErr_SetString(PyExc_TypeError, "Elements of sequence 'funcs' are not Callables");
                 return NULL;
             }
         }

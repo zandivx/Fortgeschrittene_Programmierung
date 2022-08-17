@@ -1,3 +1,4 @@
+#include <python3.10/Python.h>
 #include "vector.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,6 +40,31 @@ void v_add_v_factor_tmp(vector dest, vector src1, vector src2, double factor)
         for (size_t i = 0; i < src1.n; i++)
         {
             dest.ptr[i] = src1.ptr[i] + factor * src2.ptr[i];
+        }
+    }
+}
+
+void array_to_tuple(PyObject *tuple, double *array, size_t n)
+{
+    PyObject *tmp = NULL;
+
+    if (!PyTuple_Check(tuple))
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'array_to_tuple' is not a Python tuple");
+        return NULL;
+    }
+    for (size_t i = 0; i < n; i++)
+    {
+        tmp = PyFloat_FromDouble(array[i]);
+        if (tmp)
+        {
+            PyTuple_SetItem(tuple, (Py_ssize_t)i, tmp);
+            tmp = NULL;
+        }
+        else
+        {
+            PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'array_to_tuple' is not convertibel to a Python float", i);
+            return NULL;
         }
     }
 }

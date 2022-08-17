@@ -18,6 +18,8 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     const size_t size = ceil((tmax - t0) / h);
     double matrix_element = 0;
     double current_t = 0;
+    PyObject *PO_tmp = NULL;
+    PyObject *PO_tuple = NULL;
     vector k1 = {NULL, n};
     vector k2 = {NULL, n};
     vector k3 = {NULL, n};
@@ -47,6 +49,27 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     // partially initialize matrix
     memcpy(m.ptr, y0, n * sizeof(double));
 
+    /*
+    source: https://github.com/python/cpython/blob/main/Objects/call.c
+    PyObject *PyObject_CallFunctionObjArgs(PyObject *callable, ...)
+    {
+        PyThreadState *tstate = _PyThreadState_GET();
+        va_list vargs;
+        PyObject *result;
+
+        va_start(vargs, callable);
+        result = object_vacall(tstate, NULL, callable, vargs);
+        va_end(vargs);
+
+        return result;
+    }
+    */
+
+    // create new tuple to store arguments for function calls of Python code in
+    PO_tuple = PyTuple_New(n);
+    /* also interesting:
+    https://stackoverflow.com/questions/57101350/calling-python-function-with-arbitrary-number-not-known-at-compilation-time-of */
+
     // axis 0
     for (size_t i = 1; i < size; i++)
     {
@@ -55,32 +78,79 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         current_t = t_.ptr[i - 1];
 
         // k1
+        // array to call Python-functions with has to be converted to a Python sequence first (tuple in this case)
+        array_to_tuple(PO_tuple, row.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
-            // PyObject_CallFunction
-            // rv = PyObject_CallFunction(PO_func_array[0], "d", t0);
-            k1.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t, row.ptr));
+            // Calling the functions using PyObject_CallFunction convention
+            // (PyObject*)rv = PyObject_CallFunction(PyObject *function, char *format_string, ...(arguments));
+            PO_tmp = PyObject_CallFunction(func[j], "dO", current_t, PO_tuple);
+
+            // Check wheter calculated object is a number (float or int)
+            if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
+            {
+                PyErr_Format(PyExc_TypeError, "Result of 'PyObject_Callfunction' in loop 'k1' at index j=%zu did not return a number!", j);
+                return NULL;
+            }
+            else
+            {
+                k1.ptr[j] = PyFloat_AsDouble(PO_tmp);
+                PO_tmp = NULL;
+            }
         }
 
         // k2
         v_add_v_factor_tmp(tmp, row, k1, h / 2);
+        array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
-            k2.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h / 2, tmp.ptr));
+            PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h / 2, PO_tuple);
+            if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
+            {
+                PyErr_Format(PyExc_TypeError, "Result of 'PyObject_Callfunction' in loop 'k2' at index j=%zu did not return a number!", j);
+                return NULL;
+            }
+            else
+            {
+                k2.ptr[j] = PyFloat_AsDouble(PO_tmp);
+                PO_tmp = NULL;
+            }
         }
 
         // k3
         v_add_v_factor_tmp(tmp, row, k2, h / 2);
+        array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
-            k3.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h / 2, tmp.ptr));
+            PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h / 2, PO_tuple);
+            if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
+            {
+                PyErr_Format(PyExc_TypeError, "Result of 'PyObject_Callfunction' in loop 'k3' at index j=%zu did not return a number!", j);
+                return NULL;
+            }
+            else
+            {
+                k3.ptr[j] = PyFloat_AsDouble(PO_tmp);
+                PO_tmp = NULL;
+            }
         }
 
         // k4
         v_add_v_factor_tmp(tmp, row, k3, h);
+        array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
-            k4.ptr[j] = PyFloat_AsDouble(PyObject_CallFunction(func[j], "dd", current_t + h, tmp.ptr));
+            PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h, PO_tuple);
+            if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
+            {
+                PyErr_Format(PyExc_TypeError, "Result of 'PyObject_Callfunction' in loop 'k4' at index j=%zu did not return a number!", j);
+                return NULL;
+            }
+            else
+            {
+                k4.ptr[j] = PyFloat_AsDouble(PO_tmp);
+                PO_tmp = NULL;
+            }
         }
 
         // calculate next y
@@ -100,6 +170,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     delete_v(&k4);
     delete_v(&tmp);
     // no free of row!!!
+    Py_XDECREF(PO_tuple);
 
     // point input pointers to array of matrix m and vector t_
     *t = t_.ptr;
