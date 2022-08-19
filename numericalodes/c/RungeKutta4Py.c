@@ -49,23 +49,8 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
     // partially initialize matrix
     memcpy(m.ptr, y0, n * sizeof(double));
 
-    /*
-    source: https://github.com/python/cpython/blob/main/Objects/call.c
-    PyObject *PyObject_CallFunctionObjArgs(PyObject *callable, ...)
-    {
-        PyThreadState *tstate = _PyThreadState_GET();
-        va_list vargs;
-        PyObject *result;
-
-        va_start(vargs, callable);
-        result = object_vacall(tstate, NULL, callable, vargs);
-        va_end(vargs);
-
-        return result;
-    }
-    */
-
     // create new tuple to store arguments for function calls of Python code in
+    // * NEW REFERENCE *
     PO_tuple = PyTuple_New(n);
     /* also interesting:
     https://stackoverflow.com/questions/57101350/calling-python-function-with-arbitrary-number-not-known-at-compilation-time-of */
@@ -78,12 +63,13 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         current_t = t_.ptr[i - 1];
 
         // k1
-        // array to call Python-functions with has to be converted to a Python sequence first (tuple in this case)
+        // convert array to call Python-functions with into a tuple
         array_to_tuple(PO_tuple, row.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
-            // Calling the functions using PyObject_CallFunction convention
+            // Calling the functions using PyObject_CallFunction
             // (PyObject*)rv = PyObject_CallFunction(PyObject *function, char *format_string, ...(arguments));
+            // * NEW REFERENCE *
             PO_tmp = PyObject_CallFunction(func[j], "dO", current_t, PO_tuple);
 
             // Check wheter calculated object is a number (float or int)
@@ -95,6 +81,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
             else
             {
                 k1.ptr[j] = PyFloat_AsDouble(PO_tmp);
+
+                // * DECREF *
+                Py_DECREF(PO_tmp);
                 PO_tmp = NULL;
             }
         }
@@ -104,6 +93,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
+            // * NEW REFERENCE *
             PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h / 2, PO_tuple);
             if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
             {
@@ -113,6 +103,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
             else
             {
                 k2.ptr[j] = PyFloat_AsDouble(PO_tmp);
+
+                // * DECREF *
+                Py_DECREF(PO_tmp);
                 PO_tmp = NULL;
             }
         }
@@ -122,6 +115,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
+            // * NEW REFERENCE *
             PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h / 2, PO_tuple);
             if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
             {
@@ -131,6 +125,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
             else
             {
                 k3.ptr[j] = PyFloat_AsDouble(PO_tmp);
+
+                // * DECREF *
+                Py_DECREF(PO_tmp);
                 PO_tmp = NULL;
             }
         }
@@ -140,6 +137,7 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         array_to_tuple(PO_tuple, tmp.ptr, n);
         for (size_t j = 0; j < n; j++)
         {
+            // * NEW REFERENCE *
             PO_tmp = PyObject_CallFunction(func[j], "dO", current_t + h, PO_tuple);
             if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
             {
@@ -149,6 +147,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
             else
             {
                 k4.ptr[j] = PyFloat_AsDouble(PO_tmp);
+
+                // * DECREF *
+                Py_DECREF(PO_tmp);
                 PO_tmp = NULL;
             }
         }
@@ -164,19 +165,21 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         t_.ptr[i] = current_t + h;
     }
 
+    // memory management
     delete_v(&k1);
     delete_v(&k2);
     delete_v(&k3);
     delete_v(&k4);
     delete_v(&tmp);
     // no free of row!!!
-    Py_XDECREF(PO_tuple);
+
+    // reference counting
+    // * DECREF *
+    Py_DECREF(PO_tuple);
 
     // point input pointers to array of matrix m and vector t_
     *t = t_.ptr;
     *y = m.ptr;
-    UNUSED(t);
-    UNUSED(y);
 
     return size;
 }

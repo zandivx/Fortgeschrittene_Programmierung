@@ -9,6 +9,7 @@ def RK4py(
     # compare: DOC_numericalodesc
     """Calculate the solution to the explicit system of differential equations y'=f(t,y) (with y and f as vectors) numerically
     using the explicit Runge-Kutta algorithm of order 4 written in pure Python.
+    The function f has to take EXACTLY TWO input parameters: a scalar t and a vector y.
     'Sequence' is a Python object that supports the sequence protocol (e.g. a list or a tuple)
     funcs: sequence\tentries of the vector f(t,y) (Callables)
     t0: float\tleft border of the domain to calculate the solution on

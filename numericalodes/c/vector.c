@@ -55,9 +55,11 @@ void array_to_tuple(PyObject *tuple, double *array, size_t n)
     }
     for (size_t i = 0; i < n; i++)
     {
+        // * NEW REFERENCE *
         tmp = PyFloat_FromDouble(array[i]);
         if (tmp)
         {
+            // * DECREF *
             PyTuple_SetItem(tuple, (Py_ssize_t)i, tmp);
             tmp = NULL;
         }

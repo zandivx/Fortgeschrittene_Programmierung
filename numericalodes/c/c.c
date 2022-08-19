@@ -4,13 +4,27 @@
 #include "RungeKutta4Py.h" // https://stackoverflow.com/a/33711076/16527499
 #include "matrix.h"
 
-#define UNUSED(x) (void)(x)
-
 /*
 important concept:
 https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
 */
 
+/*
+    info :: references
+    only three within this code used functions return new references:
+    - PySequence_GetItem
+    - PyTuple_New
+    - PyObject_CallFunction
+
+    As long as they are not stolen by
+    - PyTuple_SetItem
+    they have to be decresed manually
+*/
+
+/*
+    Ask the kernel for a memory block and check whether the call was valid.
+    Return 0 on success or -1 on failure.
+*/
 int malloc_fail(void **ptr, size_t size, unsigned int size_of)
 {
     void *tmp = NULL;
@@ -28,14 +42,22 @@ int malloc_fail(void **ptr, size_t size, unsigned int size_of)
     }
 }
 
+/*
+    Get the element at position 'loc' from the Python sequence 'sequence' and
+    store it at the location 'dest'.
+    Return 0 on success or -1 on failure.
+    New reference in 'dest'!
+*/
 int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
 {
-    PyObject *tmp = NULL;
+    PyObject *tmp = NULL; // temporary Python object
 
+    // new reference
     tmp = PySequence_GetItem(sequence, loc);
 
     if (tmp)
     {
+        // point dest pointer to address of obtained object
         *dest = tmp;
         return 0;
     }
@@ -45,11 +67,12 @@ int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
     }
 }
 
-// Functions to call in Python ----------------------------------------------------------------------------
+// Functions to call in Python ------------------------------------------------------------------
 
 const char DOC_RK4c[] =
     "Calculate the solution to the explicit system of differential equations y'=f(t,y) (with y and f as vectors) numerically"
     "using the explicit Runge-Kutta algorithm of order 4 written in C.\n"
+    "The function f has to take EXACTLY TWO input parameters: a scalar t and a vector y.\n"
     "'Sequence' is a Python object that supports the sequence protocol (e.g. a list or a tuple)\n"
     "funcs: sequence\tentries of the vector f(t,y) (Callables)\n"
     "t0: float\tleft border of the domain to calculate the solution on\n"
@@ -57,7 +80,8 @@ const char DOC_RK4c[] =
     "y0: sequence\tentries of the vector with initial conditions at the moment t0\n"
     "h: float\tstep size (distance between moments t)\n";
 
-static PyObject *RK4c(PyObject *self, PyObject *args)
+static PyObject *
+RK4c(PyObject *self, PyObject *args)
 {
     size_t n = 0;                    // size of func array
     size_t size = 0;                 // amount of moments in calculated vectors
@@ -116,10 +140,11 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Unpack function tuple into array
+    // Unpack function-tuple into array
     // https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
+        // * NEW REFERENCE *
         if (unpack_fail(&PO_tmp, funcs, i))
         {
             PyErr_SetString(PyExc_LookupError, "Unpacking of funcs to array_PO_func");
@@ -127,30 +152,32 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         }
         else
         {
-            // Check wheter unpacked elements are Callables
+            // Check whether unpacked elements are Callables
             if (PyCallable_Check(PO_tmp))
             {
                 array_PO_func[i] = PO_tmp;
+                // info :: no decref yet -> function objects are needed later on
                 PO_tmp = NULL;
             }
             else
             {
-                PyErr_SetString(PyExc_TypeError, "Elements of sequence 'funcs' are not Callables");
+                PyErr_Format(PyExc_TypeError, "Element at index %zu of sequence 'funcs' is not a Callable", i);
                 return NULL;
             }
         }
     }
 
-    // Create C array to unpack Python y0 tuple into
+    // Create C array to unpack Python tuple y0 into
     if (malloc_fail((void **)&y0, n, sizeof(PyObject *)))
     {
         PyErr_SetString(PyExc_SystemError, "malloc y0");
         return NULL;
     }
 
-    // Unpack y0 tuple into array
+    // Unpack tuple y0 into array
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
+        // * NEW REFERENCE *
         if (unpack_fail(&PO_tmp, PO_y0, i))
         {
             PyErr_SetString(PyExc_LookupError, "Unpacking of PO_y0 to y0");
@@ -158,10 +185,14 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         }
         else
         {
-            // Check wheter unpacked elements are numbers (float or int)
+            // Check whether unpacked elements are numbers (float or int)
             if (PyFloat_Check(PO_tmp) || PyLong_Check(PO_tmp))
             {
                 y0[i] = PyFloat_AsDouble(PO_tmp);
+
+                // float entries from initial conditions vector y0 are no longer needed as seperate references
+                // * DECREF *
+                Py_DECREF(PO_tmp);
                 PO_tmp = NULL;
             }
             else
@@ -185,7 +216,7 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Calculation ------------------------------------------------------------------------
+    // Calculation ----------------------------------------------------------------------------------
 
     size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
     matrix m = {y, size, n};
@@ -199,13 +230,20 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
 
     // https://stackoverflow.com/a/16401126/16527499
     // Return value: New (strong) reference
-    // PyTuple_SetItem steals references, so no decref'ing needed
+    // PyTuple_SetItem steals a reference, so no decref-ing needed
+
+    // * NEW REFERENCE *
     tuple_t = PyTuple_New(size);
+    // * NEW REFERENCE *
     tuple_y = PyTuple_New(n);
+    // * NEW REFERENCE *
     tuple_rv = PyTuple_New(2);
 
     for (Py_ssize_t i = 0; i < (Py_ssize_t)size; i++)
     {
+        // reference counting:
+        //  directly stolen <---------- new reference
+        //  * DECREF *                  * NEW REFERENCE *
         if (PyTuple_SetItem(tuple_t, i, PyFloat_FromDouble(t[i])))
         {
             PyErr_Format(PyExc_IndexError, "Setting return vector t: out of bounds (i=%zu, size=%zu)", i, size);
@@ -215,9 +253,11 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
 
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
+        // * NEW REFERENCE *
         PO_tmp = PyTuple_New(size);
         for (Py_ssize_t j = 0; j < (Py_ssize_t)size; j++)
         {
+            //  * DECREF *                 * NEW REFERENCE *
             if (PyTuple_SetItem(PO_tmp, j, PyFloat_FromDouble(get_e(m, i, j))))
             {
                 PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (j=%zu, size=%zu)", j, size);
@@ -226,6 +266,7 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         }
 
         // i--> PO_tmp1, PO_tmp2, PO_tmp3, ...
+        //  * DECREF *
         if (PyTuple_SetItem(tuple_y, i, PO_tmp))
         {
             PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%zu, n=%zu)", i, n);
@@ -233,19 +274,26 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
         }
     }
 
+    //  * DECREF *                               * DECREF *
     if (PyTuple_SetItem(tuple_rv, 0, tuple_t) || PyTuple_SetItem(tuple_rv, 1, tuple_y))
     {
         PyErr_SetString(PyExc_IndexError, "Setting return tuple rv: out of bounds");
         return NULL;
     }
 
-    // sanitize
-    // UNUSED(t);
-    // UNUSED(y);
+    // memory management
     free(array_PO_func);
     free(y0);
     free(t);
     free(y);
+
+    // reference counting
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
+    {
+        // additional references to Python functions are no longer needed
+        // * DECREF *
+        Py_DECREF(array_PO_func[i]);
+    }
 
     return tuple_rv;
 }
