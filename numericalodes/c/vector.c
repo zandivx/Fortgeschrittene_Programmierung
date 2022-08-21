@@ -70,3 +70,65 @@ void array_to_tuple(PyObject *tuple, double *array, size_t n)
         }
     }
 }
+
+void v_add_v_factor_to_tuple(PyObject *tuple, vector src1, vector src2, double factor)
+{
+    PyObject *tmp = NULL;
+
+    if (!PyTuple_Check(tuple))
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'v_add_v_factor_to_tuple' is not a Python tuple");
+        return NULL;
+    }
+
+    if (src1.n != src2.n)
+    {
+        PyErr_SetString(PyExc_ValueError, "Input vectors are not of the same size");
+        return NULL;
+    }
+
+    for (size_t i = 0; i < src1.n; i++)
+    {
+        // * NEW REFERENCE *
+        tmp = PyFloat_FromDouble(src1.ptr[i] + factor * src2.ptr[i]);
+
+        // check if conversion was valid
+        if (tmp)
+        {
+            // * DECREF *
+            PyTuple_SetItem(tuple, (Py_ssize_t)i, tmp);
+            tmp = NULL;
+        }
+        else
+        {
+            PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'v_add_v_factor_to_tuple' is not convertible to a Python float", i);
+            return NULL;
+        }
+    }
+}
+void vector_to_tuple(PyObject *tuple, vector vec)
+{
+    PyObject *tmp = NULL;
+
+    if (!PyTuple_Check(tuple))
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'array_to_tuple' is not a Python tuple");
+        return NULL;
+    }
+    for (size_t i = 0; i < vec.n; i++)
+    {
+        // * NEW REFERENCE *
+        tmp = PyFloat_FromDouble(vec.ptr[i]);
+        if (tmp)
+        {
+            // * DECREF *
+            PyTuple_SetItem(tuple, (Py_ssize_t)i, tmp);
+            tmp = NULL;
+        }
+        else
+        {
+            PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'array_to_tuple' is not convertibel to a Python float", i);
+            return NULL;
+        }
+    }
+}

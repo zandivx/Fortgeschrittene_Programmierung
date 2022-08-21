@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "RungeKutta4Py.h" // https://stackoverflow.com/a/33711076/16527499
 #include "matrix.h"
+#include "vector.h"
 
 /*
 important concept:
@@ -10,7 +11,7 @@ https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-
 */
 
 /*
-    info :: references
+    info: references
     only three within this code used functions return new references:
     - PySequence_GetItem
     - PyTuple_New
@@ -289,6 +290,23 @@ RK4c(PyObject *self, PyObject *args)
     return tuple_rv;
 }
 
+static PyObject *
+tmp(PyObject *self, PyObject *args)
+{
+    double d1, d2, d3, array[3];
+    PyObject *tuple;
+
+    PyArg_ParseTuple(args, "ddd", &d1, &d2, &d3);
+    array[0] = d1;
+    array[1] = d2;
+    array[2] = d3;
+    tuple = PyTuple_New(3);
+
+    array_to_tuple(tuple, array, 3);
+
+    return tuple;
+}
+
 // General setup -----------------------------------------------------------------------------------------------------------
 
 /*
@@ -301,6 +319,7 @@ https://docs.python.org/3/c-api/structures.html#c.PyMethodDef
 */
 static PyMethodDef c_methods[] = {
     {"RK4c", (PyCFunction)RK4c, METH_VARARGS, DOC_RK4c},
+    {"tmp", (PyCFunction)tmp, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}};
 
 /*

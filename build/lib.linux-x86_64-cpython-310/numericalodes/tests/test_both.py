@@ -4,7 +4,7 @@ import numericalodes
 
 
 def main() -> None:
-    tup = ([lambda t, y: y], 0, 3, [1], 1e-4)
+    tup = ([lambda t, y: y[0]], 0, 3, [1], 1e-4)
     t, ypy = numericalodes.RK4py(*tup)
     _, yc = numericalodes.RK4c(*tup)
 

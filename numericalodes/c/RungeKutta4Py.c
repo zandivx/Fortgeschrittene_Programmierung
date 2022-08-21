@@ -64,15 +64,16 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
 
         // k1
         // convert array to call Python-functions with into a tuple
-        array_to_tuple(PO_tuple, row.ptr, n);
+        // array_to_tuple(PO_tuple, row.ptr, n);
+        vector_to_tuple(PO_tuple, row);
         for (size_t j = 0; j < n; j++)
         {
             // Calling the functions using PyObject_CallFunction
-            // (PyObject*)rv = PyObject_CallFunction(PyObject *function, char *format_string, ...(arguments));
+            // (PyObject*)rv = PyObject_CallFunction((PyObject *)function, (char *)format_string, ...(arguments));
             // * NEW REFERENCE *
             PO_tmp = PyObject_CallFunction(func[j], "dO", current_t, PO_tuple);
 
-            // Check wheter calculated object is a number (float or int)
+            // Check whether calculated object is a number (float or int)
             if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
             {
                 PyErr_Format(PyExc_TypeError, "Result of 'PyObject_Callfunction' in loop 'k1' at index j=%zu did not return a number!", j);
@@ -89,8 +90,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         }
 
         // k2
-        v_add_v_factor_tmp(tmp, row, k1, h / 2);
-        array_to_tuple(PO_tuple, tmp.ptr, n);
+        // v_add_v_factor_tmp(tmp, row, k1, h / 2);
+        // array_to_tuple(PO_tuple, tmp.ptr, n);
+        v_add_v_factor_to_tuple(PO_tuple, row, k1, h / 2);
         for (size_t j = 0; j < n; j++)
         {
             // * NEW REFERENCE *
@@ -111,8 +113,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         }
 
         // k3
-        v_add_v_factor_tmp(tmp, row, k2, h / 2);
-        array_to_tuple(PO_tuple, tmp.ptr, n);
+        // v_add_v_factor_tmp(tmp, row, k2, h / 2);
+        // array_to_tuple(PO_tuple, tmp.ptr, n);
+        v_add_v_factor_to_tuple(PO_tuple, row, k2, h / 2);
         for (size_t j = 0; j < n; j++)
         {
             // * NEW REFERENCE *
@@ -133,8 +136,9 @@ size_t RK4vector(double **t, double **y, PyObject **func, size_t n, double t0, d
         }
 
         // k4
-        v_add_v_factor_tmp(tmp, row, k3, h);
-        array_to_tuple(PO_tuple, tmp.ptr, n);
+        // v_add_v_factor_tmp(tmp, row, k3, h);
+        // array_to_tuple(PO_tuple, tmp.ptr, n);
+        v_add_v_factor_to_tuple(PO_tuple, row, k3, h);
         for (size_t j = 0; j < n; j++)
         {
             // * NEW REFERENCE *
