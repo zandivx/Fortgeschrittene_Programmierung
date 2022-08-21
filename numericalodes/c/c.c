@@ -156,7 +156,6 @@ RK4c(PyObject *self, PyObject *args)
             if (PyCallable_Check(PO_tmp))
             {
                 array_PO_func[i] = PO_tmp;
-                // info :: no decref yet -> function objects are needed later on
                 PO_tmp = NULL;
             }
             else
@@ -286,14 +285,6 @@ RK4c(PyObject *self, PyObject *args)
     free(y0);
     free(t);
     free(y);
-
-    // reference counting
-    for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
-    {
-        // additional references to Python functions are no longer needed
-        // * DECREF *
-        Py_DECREF(array_PO_func[i]);
-    }
 
     return tuple_rv;
 }

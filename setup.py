@@ -23,7 +23,7 @@ with open("README.md") as f:
 setup(
     name="numericalodes",
     # https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/
-    version="1.0.dev27",
+    version="1.0.dev29",
     # compare: DOC_numericalodesc
     description="Package with functions to calculate systems of ODEs numeracally similar to scipy.integrate.solve_ipv",
     long_description=long_desc,
