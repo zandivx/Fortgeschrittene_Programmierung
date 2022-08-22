@@ -1,5 +1,4 @@
 #include <python3.10/Python.h>
-// #include <stdio.h>  // printf
 #include <stdlib.h> // malloc, free
 #include <stddef.h> // size_t
 #include <string.h> // memcpy
@@ -123,7 +122,6 @@ void kn_loop(vector k, PyObject **func_array, double t, PyObject *tuple)
         if (!PyFloat_Check(PO_tmp) && !PyLong_Check(PO_tmp))
         {
             PyErr_SetString(PyExc_TypeError, "Result of 'PyObject_Callfunction' in function 'kn_loop' did not return a number!");
-            return NULL;
         }
         else
         {

@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <python3.10/Python.h>
 #include <stdlib.h>
+#include "c.h"
 #include "RungeKutta4Py.h" // https://stackoverflow.com/a/33711076/16527499
 #include "matrix.h"
 
@@ -65,9 +66,10 @@ int unpack_fail(PyObject **dest, PyObject *sequence, Py_ssize_t loc)
 // Functions to call in Python ------------------------------------------------------------------
 
 const char DOC_RK4c[] =
-    "Calculate the solution to the explicit system of differential equations y'=f(t,y) (with y and f as vectors) numerically"
-    "using the explicit Runge-Kutta algorithm of order 4 written in C.\n"
-    "The function f has to take EXACTLY TWO input parameters: a scalar t and a vector y.\n"
+    "Calculate the solution to the explicit system of differential equations y'=f(t,y) (with y "
+    "and f as vectors) numerically using the explicit Runge-Kutta algorithm of order 4 written in C.\n"
+    "The function f needs the following signature:\n"
+    "def f(t: float, y: Sequence[Callable]) -> float:\n"
     "'Sequence' is a Python object that supports the sequence protocol (e.g. a list or a tuple)\n"
     "funcs: sequence\tentries of the vector f(t,y) (Callables)\n"
     "t0: float\tleft border of the domain to calculate the solution on\n"
@@ -321,7 +323,8 @@ static PyObject *RK4c(PyObject *self, PyObject *args)
 */
 static PyMethodDef c_methods[] = {
     {"RK4c", (PyCFunction)RK4c, METH_VARARGS, DOC_RK4c},
-    {NULL, NULL, 0, NULL}};
+    {NULL, NULL, 0, NULL},
+};
 
 /*
     bundle up the module
@@ -344,7 +347,8 @@ static struct PyModuleDef c_module = {
     "c",
     DOC_c,
     -1,
-    c_methods};
+    c_methods,
+};
 
 // Initialize the module with PyInit_MODULENAME
 PyMODINIT_FUNC PyInit_c(void)
