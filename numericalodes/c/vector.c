@@ -28,35 +28,21 @@ void print_v(vector v)
     printf("% 05.8f\n", v.ptr[v.n - 1]);
 }
 
-void v_add_v_factor_tmp(vector dest, vector src1, vector src2, double factor)
-{
-    if (src1.n != src2.n)
-    {
-        printf("Error in v_add_v_factor_tmp\n");
-        return;
-    }
-    else
-    {
-        for (size_t i = 0; i < src1.n; i++)
-        {
-            dest.ptr[i] = src1.ptr[i] + factor * src2.ptr[i];
-        }
-    }
-}
-
-void array_to_tuple(PyObject *tuple, double *array, size_t n)
+void vector_to_tuple(PyObject *tuple, vector vec)
 {
     PyObject *tmp = NULL;
 
     if (!PyTuple_Check(tuple))
     {
-        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'array_to_tuple' is not a Python tuple");
+        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'vector_to_tuple' is not a Python tuple");
         return NULL;
     }
-    for (size_t i = 0; i < n; i++)
+    for (size_t i = 0; i < vec.n; i++)
     {
         // * NEW REFERENCE *
-        tmp = PyFloat_FromDouble(array[i]);
+        tmp = PyFloat_FromDouble(vec.ptr[i]);
+
+        // check if conversion was valid
         if (tmp)
         {
             // * DECREF *
@@ -65,7 +51,7 @@ void array_to_tuple(PyObject *tuple, double *array, size_t n)
         }
         else
         {
-            PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'array_to_tuple' is not convertibel to a Python float", i);
+            PyErr_Format(PyExc_ValueError, "Argument 'vector[%zu]' in function 'vector_to_tuple' is not convertible to a Python float", i);
             return NULL;
         }
     }
@@ -83,7 +69,7 @@ void v_add_v_factor_to_tuple(PyObject *tuple, vector src1, vector src2, double f
 
     if (src1.n != src2.n)
     {
-        PyErr_SetString(PyExc_ValueError, "Input vectors are not of the same size");
+        PyErr_SetString(PyExc_ValueError, "Input vectors in function 'v_add_v_factor_to_tuple' are not of the same size");
         return NULL;
     }
 
@@ -102,32 +88,6 @@ void v_add_v_factor_to_tuple(PyObject *tuple, vector src1, vector src2, double f
         else
         {
             PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'v_add_v_factor_to_tuple' is not convertible to a Python float", i);
-            return NULL;
-        }
-    }
-}
-void vector_to_tuple(PyObject *tuple, vector vec)
-{
-    PyObject *tmp = NULL;
-
-    if (!PyTuple_Check(tuple))
-    {
-        PyErr_SetString(PyExc_TypeError, "Argument 'tuple' in function 'array_to_tuple' is not a Python tuple");
-        return NULL;
-    }
-    for (size_t i = 0; i < vec.n; i++)
-    {
-        // * NEW REFERENCE *
-        tmp = PyFloat_FromDouble(vec.ptr[i]);
-        if (tmp)
-        {
-            // * DECREF *
-            PyTuple_SetItem(tuple, (Py_ssize_t)i, tmp);
-            tmp = NULL;
-        }
-        else
-        {
-            PyErr_Format(PyExc_ValueError, "Argument 'array[%zu]' in function 'array_to_tuple' is not convertibel to a Python float", i);
             return NULL;
         }
     }

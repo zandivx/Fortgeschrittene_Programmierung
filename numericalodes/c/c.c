@@ -3,12 +3,6 @@
 #include <stdlib.h>
 #include "RungeKutta4Py.h" // https://stackoverflow.com/a/33711076/16527499
 #include "matrix.h"
-#include "vector.h"
-
-/*
-important concept:
-https://stackoverflow.com/questions/53215786/when-writing-a-python-extension-in-c-how-does-one-pass-a-python-function-in-to
-*/
 
 /*
     info: references
@@ -81,17 +75,17 @@ const char DOC_RK4c[] =
     "y0: sequence\tentries of the vector with initial conditions at the moment t0\n"
     "h: float\tstep size (distance between moments t)\n";
 
-static PyObject *
-RK4c(PyObject *self, PyObject *args)
+static PyObject *RK4c(PyObject *self, PyObject *args)
 {
     size_t n = 0;                    // size of func array
     size_t size = 0;                 // amount of moments in calculated vectors
-    double *t = NULL;                // pointer to vector elements of moments
-    double *y = NULL;                // pointer to matrix elements of function values at moments t
     double t0 = 0;                   // first moment
     double tmax = 0;                 // last moment
     double h = 0;                    // step-size between moments
     double *y0 = NULL;               // inital array at position t=t0
+    double *t = NULL;                // pointer to vector elements of moments
+    double *y = NULL;                // pointer to matrix elements of function values at moments t
+    matrix m = {NULL, 0, 0};         // matrix struct of array y
     PyObject *funcs = NULL;          // Python object of functions tuple
     PyObject *PO_y0 = NULL;          // Python object of y0 tuple
     PyObject **array_PO_func = NULL; // Array of Python functions unpacked from Python tuple
@@ -101,9 +95,9 @@ RK4c(PyObject *self, PyObject *args)
     PyObject *PO_tmp = NULL;         // temporary Python Object
 
     /*
-    Parse arguments:
-    d: double
-    O: PyObject*
+        Parse arguments:
+        d: double
+        O: PyObject* -> function: https://stackoverflow.com/a/53216911/16527499
     */
     if (!PyArg_ParseTuple(args, "OddOd", &funcs, &t0, &tmax, &PO_y0, &h))
     {
@@ -135,14 +129,17 @@ RK4c(PyObject *self, PyObject *args)
     }
 
     // Create C array to unpack Python function tuple into
+    //  * MALLOC *
     if (malloc_fail((void **)&array_PO_func, n, sizeof(PyObject *)))
     {
         PyErr_SetString(PyExc_SystemError, "malloc array_PO_func");
         return NULL;
     }
 
-    // Unpack function-tuple into array
-    // https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
+    /*
+        Unpack function-tuple into array:
+        https://stackoverflow.com/questions/25552315/python-tuple-to-c-array
+    */
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
         // * NEW REFERENCE *
@@ -168,6 +165,7 @@ RK4c(PyObject *self, PyObject *args)
     }
 
     // Create C array to unpack Python tuple y0 into
+    //  * MALLOC *
     if (malloc_fail((void **)&y0, n, sizeof(PyObject *)))
     {
         PyErr_SetString(PyExc_SystemError, "malloc y0");
@@ -218,19 +216,28 @@ RK4c(PyObject *self, PyObject *args)
 
     // Calculation ----------------------------------------------------------------------------------
 
+    //               * MALLOC x2 *
     size = RK4vector(&t, &y, array_PO_func, n, t0, tmax, y0, h);
-    matrix m = {y, size, n};
+
     /*
-    size x n-->
-     |
-     V
+        Build matrix m correctly
+        Point array y to m.ptr
+        Set dimensions to size(V) x n(>)
     */
+    m.ptr = y;
+    m.r = size;
+    m.c = n;
+
+    // transpose to n(V) x size(>) matrix
+    transpose(&m);
 
     // Building return tuple ------------------------------------------------------------------------
 
-    // https://stackoverflow.com/a/16401126/16527499
-    // Return value: New (strong) reference
-    // PyTuple_SetItem steals a reference, so no decref-ing needed
+    /*
+        https://stackoverflow.com/a/16401126/16527499
+        Return value: New (strong) reference
+        PyTuple_SetItem steals a reference, so no decref-ing needed
+    */
 
     // * NEW REFERENCE *
     tuple_t = PyTuple_New(size);
@@ -241,8 +248,10 @@ RK4c(PyObject *self, PyObject *args)
 
     for (Py_ssize_t i = 0; i < (Py_ssize_t)size; i++)
     {
-        // reference counting:
-        //  directly stolen <---------- new reference
+        /*
+            reference counting:
+            directly stolen <---------- new reference
+        */
         //  * DECREF *                  * NEW REFERENCE *
         if (PyTuple_SetItem(tuple_t, i, PyFloat_FromDouble(t[i])))
         {
@@ -253,23 +262,32 @@ RK4c(PyObject *self, PyObject *args)
 
     for (Py_ssize_t i = 0; i < (Py_ssize_t)n; i++)
     {
+        // create temporary tuple (reference will get stolen)
         // * NEW REFERENCE *
         PO_tmp = PyTuple_New(size);
+
         for (Py_ssize_t j = 0; j < (Py_ssize_t)size; j++)
         {
             //  * DECREF *                 * NEW REFERENCE *
             if (PyTuple_SetItem(PO_tmp, j, PyFloat_FromDouble(get_e(m, i, j))))
             {
-                PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (j=%zu, size=%zu)", j, size);
+                PyErr_Format(PyExc_IndexError, "Setting return matrix y out of bounds: i=%zu, j=%zu (bounds: n=%zu, size=%zu)", i, j, n, size);
                 return NULL;
             }
         }
 
-        // i--> PO_tmp1, PO_tmp2, PO_tmp3, ...
+        /*
+            i
+            |
+            V
+            PO_tmp1
+            PO_tmp2
+            ...
+        */
         //  * DECREF *
         if (PyTuple_SetItem(tuple_y, i, PO_tmp))
         {
-            PyErr_Format(PyExc_IndexError, "Setting return matrix y: out of bounds (i=%zu, n=%zu)", i, n);
+            PyErr_Format(PyExc_IndexError, "Setting return matrix y out of bounds: i=%zu (bound: n=%zu)", i, n);
             return NULL;
         }
     }
@@ -277,62 +295,46 @@ RK4c(PyObject *self, PyObject *args)
     //  * DECREF *                               * DECREF *
     if (PyTuple_SetItem(tuple_rv, 0, tuple_t) || PyTuple_SetItem(tuple_rv, 1, tuple_y))
     {
-        PyErr_SetString(PyExc_IndexError, "Setting return tuple rv: out of bounds");
+        PyErr_SetString(PyExc_IndexError, "Setting return tuple rv out of bounds");
         return NULL;
     }
 
     // memory management
+    // * FREE x4 *
     free(array_PO_func);
     free(y0);
     free(t);
-    free(y);
+    delete_m(m);
 
     return tuple_rv;
 }
 
-static PyObject *
-tmp(PyObject *self, PyObject *args)
-{
-    double d1, d2, d3, array[3];
-    PyObject *tuple;
-
-    PyArg_ParseTuple(args, "ddd", &d1, &d2, &d3);
-    array[0] = d1;
-    array[1] = d2;
-    array[2] = d3;
-    tuple = PyTuple_New(3);
-
-    array_to_tuple(tuple, array, 3);
-
-    return tuple;
-}
-
-// General setup -----------------------------------------------------------------------------------------------------------
+// General setup ------------------------------------------------------------------------------------
 
 /*
-array of functions (methods) implemented in this module, terminated with a "null-function"
-https://docs.python.org/3/c-api/structures.html#c.PyMethodDef
-[0]: ml_name    string    function name in Python
-[1]: ml_meth    pointer   to C function
-[2]: ml_flags   int       calling convention bit (see documentation)
-[3]: ml_doc     string    docstring
+    array of functions (methods) implemented in this module, terminated with a "null-function"
+    https://docs.python.org/3/c-api/structures.html#c.PyMethodDef
+    [0]: ml_name    string    function name in Python
+    [1]: ml_meth    pointer   to C function
+    [2]: ml_flags   int       calling convention bit (see documentation)
+    [3]: ml_doc     string    docstring
 */
 static PyMethodDef c_methods[] = {
     {"RK4c", (PyCFunction)RK4c, METH_VARARGS, DOC_RK4c},
-    {"tmp", (PyCFunction)tmp, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}};
 
 /*
-bundle up the module
-[0]: m_base      macro        always PyModuleDef_HEAD_INIT
-[1]: m_name      string       module name
-[2]: m_doc       string       docstring
-[3]: m_size      Py_ssize_t   amount of memory needed to store the program state (-1: no support for sub-interpreters)
-[4]: m_methods   array  	  array of fuctions (PyMethodDef[])
-[5]: m_slots
-[6]: m_traverse
-[7]: m_clear
-[8]: m_free
+    bundle up the module
+    [0]: m_base      macro        always PyModuleDef_HEAD_INIT
+    [1]: m_name      string       module name
+    [2]: m_doc       string       docstring
+    [3]: m_size      Py_ssize_t   amount of memory needed to store the program state
+                                  (-1: no support for sub-interpreters)
+    [4]: m_methods   array  	  array of fuctions (PyMethodDef[])
+    [5]: m_slots
+    [6]: m_traverse
+    [7]: m_clear
+    [8]: m_free
 */
 
 const char DOC_c[] = "C extension module with a function to calculate the solution of explicit systems of differential equations numerically.\n";
@@ -344,9 +346,7 @@ static struct PyModuleDef c_module = {
     -1,
     c_methods};
 
-/*
-Initialize the module with PyInit_MODULENAME
-*/
+// Initialize the module with PyInit_MODULENAME
 PyMODINIT_FUNC PyInit_c(void)
 {
     return PyModule_Create(&c_module);

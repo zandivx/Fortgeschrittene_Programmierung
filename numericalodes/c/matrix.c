@@ -40,11 +40,13 @@ void print_m(matrix m)
 {
     for (size_t i = 0; i < m.r; i++)
     {
-        for (size_t j = 0; j < m.c; j++)
+        for (size_t j = 0; j < m.c - 1; j++)
         {
             printf("%e\t", get_e(m, i, j));
         }
-        printf("\n");
+
+        // last entry in row: newline instead of tab
+        printf("%e\n", get_e(m, i, m.c - 1));
     }
 }
 
@@ -52,19 +54,24 @@ void fprint_m(matrix m, char *path)
 {
     FILE *file = fopen(path, "w");
 
-    for (size_t j = 0; j < m.c; j++)
+    // write header as "y0", "y1", ...
+    for (size_t j = 0; j < m.c - 1; j++)
     {
         fprintf(file, "y%ld,", j);
     }
-    fprintf(file, "\n");
+
+    // last header entry has to end with a newline instead of a comma
+    fprintf(file, "y%ld\n", m.c - 1);
 
     for (size_t i = 0; i < m.r; i++)
     {
-        for (size_t j = 0; j < m.c; j++)
+        for (size_t j = 0; j < m.c - 1; j++)
         {
             fprintf(file, "%e,", get_e(m, i, j));
         }
-        fprintf(file, "\n");
+
+        // same thing: last entry with newline
+        fprintf(file, "%e\n", get_e(m, i, m.c - 1));
     }
     fclose(file);
     printf("Wrote to path: %s\n", path);
@@ -72,6 +79,7 @@ void fprint_m(matrix m, char *path)
 
 void transpose(matrix *m)
 {
+    // matrix m = {m.ptr, m.r, m.c}
     matrix tmp = {NULL, m->c, m->r};
     create_m(&tmp);
 

@@ -12,9 +12,7 @@ typedef struct vector
 void create_v(vector *v);
 void delete_v(vector *v);
 void print_v(vector v);
-void v_add_v_factor_tmp(vector dest, vector src1, vector src2, double factor);
-void array_to_tuple(PyObject *tuple, double *array, size_t n);
-void v_add_v_factor_to_tuple(PyObject *tuple, vector src1, vector src2, double factor);
 void vector_to_tuple(PyObject *tuple, vector vec);
+void v_add_v_factor_to_tuple(PyObject *tuple, vector src1, vector src2, double factor);
 
 #endif

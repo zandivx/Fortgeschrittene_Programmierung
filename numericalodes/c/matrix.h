@@ -14,8 +14,8 @@ void delete_m(matrix m);
 double get_e(matrix m, size_t i, size_t j);           // get element
 double *get_r(matrix m, size_t i);                    // get row
 void set(matrix m, size_t i, size_t j, double value); // set element
-void print_m(matrix m);
-void fprint_m(matrix m, char *path);
+void print_m(matrix m);                               // print matrix to terminal
+void fprint_m(matrix m, char *path);                  // write matrix to file
 void transpose(matrix *m);
 
 #endif
