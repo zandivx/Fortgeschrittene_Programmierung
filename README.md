@@ -17,3 +17,7 @@ and then pip-install it
 ```bash
 pip install .
 ```
+If you want to run all test cases in `dev/tests`, you need to
+```bash
+pip install -r requirements_for_tests.txt
+```

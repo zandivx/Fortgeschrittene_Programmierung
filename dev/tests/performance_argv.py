@@ -15,7 +15,7 @@ from numericalodes import RK4c, RK4py  # type: ignore
 VERBOSE = True
 
 
-def performance_test(solver: Callable, ivps: Sequence[tuple], rep: int = 2, scipy: bool = False) -> list[float]:
+def performance_test(solver: Callable, ivps: Sequence[tuple], rep: int = 20, scipy: bool = False) -> list[float]:
     mean_times = []
 
     if scipy:
