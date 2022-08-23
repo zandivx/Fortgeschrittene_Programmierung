@@ -3,6 +3,7 @@ Plot the curve of solutions to some selected IVP's and their analytical solution
 """
 
 from math import pi, sin, sqrt
+import os
 from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,7 +49,12 @@ def main() -> None:
     ax.grid()
     ax.legend(loc="upper right")
     plt.tight_layout()
-    plt.savefig("output/compare_analytic.pdf")
+
+    directory = "output"
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
+    plt.savefig(f"{directory}/compare_analytic.pdf")
     plt.show()
 
 

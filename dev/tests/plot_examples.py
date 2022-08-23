@@ -2,6 +2,7 @@
 Plot the curve of the solution of several ivp's to demonstrate the package numericalodes.
 """
 
+import os
 from numpy import pi, sin
 import matplotlib.pyplot as plt
 from numericalodes import RK4c, RK4py  # type: ignore
@@ -17,6 +18,10 @@ def main() -> None:
         ([lambda t, y: y[0] / t + y[1] * 2 * t, lambda t, y: y[1] / t], 0.1, 5, [-4, 1], STEP_SIZE),
     )
 
+    directory = "output"
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
     for i, tup in enumerate(IVPS):
 
         _, ax = plt.subplots()
@@ -29,7 +34,7 @@ def main() -> None:
         ax.legend()
         ax.grid()
         plt.tight_layout()
-        plt.savefig(f"output/IVP{i}.pdf")
+        plt.savefig(f"{directory}/IVP{i}.pdf")
 
         print(f"IVP{i} done")
 

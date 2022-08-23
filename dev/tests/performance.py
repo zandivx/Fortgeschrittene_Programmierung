@@ -3,7 +3,7 @@ Performance test of numericalodes: Comparison of C code, Python code and -- if a
 Call the script via command line and pass a path as first argument to write the performance output to a file.
 """
 
-from sys import argv
+import os
 from timeit import default_timer as ts
 from typing import Callable, Sequence
 import numpy as np
@@ -72,9 +72,11 @@ def main() -> None:
     df = pd.concat([df, df_total])
     print(df)
 
-    if len(argv) > 1:
-        path = argv[1]
-        df.to_csv(path)
+    directory = "output"
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
+    df.to_csv(f"{directory}/performance.csv")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ Check the accuracy of the C, Python and SciPy code to the analytical solution (s
 Taylor-approximated pendulum equation of motion: d^2y/dt^2 + y = 0
 """
 
-from sys import argv
+import os
 import numpy as np
 from scipy.integrate import solve_ivp
 from numericalodes import RK4c, RK4py  # type: ignore
@@ -29,10 +29,12 @@ def main() -> None:
     string = f"Least squares:\n{c_squares=}\n{py_squares=}\n{scipy_squares=}"
     print(string)
 
-    if len(argv) > 1:
-        path = argv[1]
-        with open(path, "w") as f:
-            f.write(string)
+    directory = "output"
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
+    with open(f"{directory}/accuracy.txt", "w") as f:
+        f.write(string)
 
 
 if __name__ == "__main__":
