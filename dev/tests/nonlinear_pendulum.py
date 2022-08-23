@@ -1,22 +1,27 @@
+"""
+Calculate the numerical solution to the pendulum equation of motion without Taylor-approximation
+d^2y/dt^2 + sin(y) = 0
+with varying initial conditions
+"""
+
 from math import sin, pi
 import matplotlib.pyplot as plt
 import numericalodes
 
 
-TUP1 = [lambda t, y: y[1], lambda t, y: -sin(y[0])], 0, 4 * pi, [0.1, 0], 1e-2
-TUP2 = [lambda t, y: y[1], lambda t, y: -sin(y[0])], 0, 4 * pi, [0.9 * pi, 0], 1e-4
-
-
 def main() -> None:
-    t_c, y_c = numericalodes.RK4c(*TUP2)
-    t_py, y_py = numericalodes.RK4py(*TUP2)
+    y0_tup = [0.1, 0], [0.99 * pi, 0], [0, 0.1 * pi], [0, 0.635 * pi], [0, 0.64 * pi]
+    tup = [lambda t, y: y[1], lambda t, y: -sin(y[0])], 0, 6 * pi
 
-    plt.plot(t_c, y_c[0], label="C")
-    plt.plot(t_py, y_py[0], label="Python")
+    _, ax = plt.subplots()
 
-    plt.grid()
-    plt.legend()
+    for y0 in y0_tup:
+        t, y = numericalodes.RK4c(*tup, y0, 1e-4)
+        ax.plot(t, y[0], label=str(y0))
 
+    ax.grid()
+    ax.legend()
+    plt.tight_layout()
     plt.show()
 
 

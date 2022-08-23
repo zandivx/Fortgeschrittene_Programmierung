@@ -1,9 +1,14 @@
+"""
+Performance test of numericalodes: Comparison of C code, Python code and -- if available -- scipy code.
+Call the script via command line and pass a path as first argument to write the performance output to a file.
+"""
+
 from math import pi, sin
 from statistics import mean
 from sys import argv
 from timeit import default_timer as ts
 from typing import Callable, Sequence
-from numericalodes import RK4c, RK4py
+from numericalodes import RK4c, RK4py  # type: ignore
 
 VERBOSE = True
 
@@ -18,7 +23,7 @@ def performance_test(solver: Callable, ivps: Sequence[tuple], rep: int = 20, sci
                 funcs, t0, tmax, y0, h = tup
                 system = lambda t, y: [func(t, y) for func in funcs]
                 start = ts()
-                solver(system, [t0, tmax], y0, rtol=h)
+                solver(system, [t0, tmax], y0, method="RK45", first_step=h, max_step=h)
                 end = ts()
                 total_time += end - start
                 if VERBOSE:

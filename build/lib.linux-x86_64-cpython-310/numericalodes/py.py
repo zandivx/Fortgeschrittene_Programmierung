@@ -2,6 +2,8 @@ from math import ceil
 from itertools import repeat
 from typing import Callable, Sequence
 
+__all__ = ["RK4py"]
+
 
 def RK4py(
     funcs: Sequence[Callable], t0: float, tmax: float, y0: Sequence[float], h: float
