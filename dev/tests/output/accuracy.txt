@@ -1,0 +1,4 @@
+Least squares:
+c_squares=2.390042560406139e-16
+py_squares=2.390042560406139e-16
+scipy_squares=8.660525766581939e-23
