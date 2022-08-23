@@ -14,3 +14,6 @@ tmp Vector deprecated in favor of PO_tmp tuple
 transposed matrix
 delete_m instead of free, da y nicht mehr zur richtigen Adresse pointet
 externialized k-loops in a function instead of code duplication
+package did not work anymore without reason
+works again without reason
+wrote several test cases

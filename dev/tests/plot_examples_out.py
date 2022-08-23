@@ -29,7 +29,7 @@ def main() -> None:
         ax.legend()
         ax.grid()
         plt.tight_layout()
-        plt.savefig(f"dev/output/IVP{i}.pdf")
+        plt.savefig(f"output/IVP{i}.pdf")
 
         print(f"IVP{i} done")
 

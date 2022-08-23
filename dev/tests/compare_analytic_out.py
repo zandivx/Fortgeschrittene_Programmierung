@@ -48,7 +48,7 @@ def main() -> None:
     ax.grid()
     ax.legend(loc="upper right")
     plt.tight_layout()
-    plt.savefig("dev/output/compare_analytic.pdf")
+    plt.savefig("output/compare_analytic.pdf")
     plt.show()
 
 

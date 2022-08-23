@@ -27,7 +27,7 @@ with open("README.md") as f:
 
 setup(
     name="numericalodes",  # name of the package
-    version="1.0.dev34",
+    version="1.0",
     description="Package with functions to calculate systems of ODEs numeracally similar to scipy.integrate.solve_ipv",
     long_description=long_desc,
     author="Andreas Zach",

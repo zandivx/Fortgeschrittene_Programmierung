@@ -22,7 +22,7 @@ def performance_test(solver: Callable, ivps: Sequence[tuple], rep: int = 2, scip
         for tup in ivps:
             duration = []
             for i in range(rep):
-                funcs, t0, tmax, y0, h = tup
+                funcs, t0, tmax, y0, _ = tup
                 system = lambda t, y: [func(t, y) for func in funcs]
                 start = ts()
                 solver(system, [t0, tmax], y0, method="RK45")  # , first_step=h, max_step=h)
