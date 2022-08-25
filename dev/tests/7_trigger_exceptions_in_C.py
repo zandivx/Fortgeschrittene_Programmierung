@@ -43,7 +43,7 @@ def trigger() -> None:
         try:
             f()
         except Exception as e:
-            print(f"{f.__name__}:\t{e}\n")
+            print(f"{f.__name__:<30}{e}\n")
 
 
 def main() -> None:

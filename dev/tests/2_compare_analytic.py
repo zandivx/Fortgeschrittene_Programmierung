@@ -2,14 +2,14 @@
 Plot the curve of solutions to some selected IVP's and their analytical solution as well.
 """
 
-from math import pi, sin, sqrt
+from math import pi, sin, cos, sqrt
 import os
 from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
 import numericalodes
 
-plt.style.use("seaborn-dark")
+VERBOSE = True
 
 
 def linear(t: np.ndarray) -> np.ndarray:
@@ -24,7 +24,13 @@ def exp_cos(t: np.ndarray) -> np.ndarray:
     return np.e * np.exp(-np.cos(t)) - 1
 
 
+def driven_osci(t: np.ndarray) -> np.ndarray:
+    return 0.5 * (np.sin(t) - np.exp(-t) * t)  # type: ignore
+
+
 def main() -> None:
+    plt.style.use("seaborn-dark")
+
     STEP_SIZE = 1e-4
 
     numerical = (
@@ -34,8 +40,9 @@ def main() -> None:
         ([lambda t, y: t * y[0]], 0, 2.2, [1], STEP_SIZE),
         ([lambda t, y: sin(t) * (1 + y[0])], 0, 2 * pi, [0], STEP_SIZE),
         ([lambda t, y: 1 / (2 * sqrt(t))], 0.01, 6, [0.1], STEP_SIZE),
+        ([lambda t, y: y[1], lambda t, y: -2 * y[1] - y[0] + cos(t)], 0, 2 * pi, [0, 0], STEP_SIZE),
     )
-    analytical: tuple[Callable] = (np.exp, np.sin, linear, exp_half_squared, exp_cos, np.sqrt)  # type: ignore
+    analytical: tuple[Callable] = (np.exp, np.sin, linear, exp_half_squared, exp_cos, np.sqrt, driven_osci)  # type: ignore
 
     _, ax = plt.subplots(figsize=(12, 7))
 
@@ -44,6 +51,8 @@ def main() -> None:
         t, y = numericalodes.RK4c(*num)
         ax.plot(t, y[0], linewidth=2.5, label=f"{name}: numerically")
         ax.plot(t, an(np.array(t)), linestyle="--", linewidth=1.5, color="w", label=f"{name}: analytically")
+        if VERBOSE:
+            print(f"{name} done")
 
     ax.set_title("Compare numerical to analytical solutions")
     ax.grid()

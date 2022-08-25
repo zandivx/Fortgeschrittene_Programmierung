@@ -13,35 +13,43 @@ import uncertainties as u
 from numericalodes import RK4c, RK4py  # type: ignore
 
 VERBOSE = True
+REPETITIONS = 20
+EQUAL_STEPS = False
 
 
-def performance_test(solver: Callable, ivps: Sequence[tuple], rep: int = 20, scipy: bool = False) -> list[float]:
+def performance_test(
+    solver: Callable, ivps: Sequence[tuple], rep: int = REPETITIONS, scipy: bool = False
+) -> list[float]:
     mean_times = []
 
     if scipy:
-        for tup in ivps:
+        for i, tup in enumerate(ivps):
             duration = []
-            for i in range(rep):
-                funcs, t0, tmax, y0, _ = tup
+            for n in range(rep):
+                funcs, t0, tmax, y0, h = tup
                 system = lambda t, y: [func(t, y) for func in funcs]
                 start = ts()
-                solver(system, [t0, tmax], y0, method="RK45")  # , first_step=h, max_step=h)
+                # for equal step sizes but decreased performance in scipy:
+                if EQUAL_STEPS:
+                    solver(system, [t0, tmax], y0, method="RK45", first_step=h, max_step=h)
+                else:
+                    solver(system, [t0, tmax], y0, method="RK45")
                 end = ts()
                 duration.append(end - start)
                 if VERBOSE:
-                    print(f"{solver.__name__}: {tup}\t@ rep {i}")
+                    print(f"{solver.__name__}: IVP{1} @ rep {n:02}")
             mean_times.append(u.ufloat(np.mean(duration), np.std(duration)))
 
     else:
-        for tup in ivps:
+        for i, tup in enumerate(ivps):
             duration = []
-            for i in range(rep):
+            for n in range(rep):
                 start = ts()
                 solver(*tup)
                 end = ts()
                 duration.append(end - start)
                 if VERBOSE:
-                    print(f"{solver.__name__}: {tup}\t@ rep {i}")
+                    print(f"{solver.__name__}: IVP{i} @ rep {n:02}")
             mean_times.append(u.ufloat(np.mean(duration), np.std(duration)))
 
     return mean_times

@@ -18,8 +18,11 @@ def main() -> None:
     system = lambda t, y: [func(t, y) for func in funcs]
 
     t, c = RK4c(funcs, t0, tmax, y0, h)
+    print("C done")
     _, py = RK4py(funcs, t0, tmax, y0, h)
+    print("Py done")
     sol = solve_ivp(system, [t0, tmax], y0, method="RK45", first_step=h, max_step=h)
+    print("Scipy done")
 
     y = np.sin(t)
     c_squares = np.sum((y - c[0]) ** 2)
